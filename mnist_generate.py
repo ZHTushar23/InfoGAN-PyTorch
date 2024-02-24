@@ -25,16 +25,18 @@ netG = Generator().to(device)
 netG.load_state_dict(state_dict['netG'])
 print(netG)
 
-c = np.linspace(-2, 2, 10).reshape(1, -1)
-c = np.repeat(c, 10, 0).reshape(-1, 1)
+c = np.linspace(-2, 2, 10).reshape(1, -1) #shape(1,10)
+c = np.repeat(c, 10, 0).reshape(-1, 1)  #shape(100,1)
 c = torch.from_numpy(c).float().to(device)
-c = c.view(-1, 1, 1, 1)
+c = c.view(-1, 1, 1, 1)  # torch.Size([100, 1, 1, 1])
 
 zeros = torch.zeros(100, 1, 1, 1, device=device)
 
 # Continuous latent code.
-c2 = torch.cat((c, zeros), dim=1)
-c3 = torch.cat((zeros, c), dim=1)
+c2 = torch.cat((c, zeros), dim=1) # torch.Size([100, 2, 1, 1])
+
+c3 = torch.cat((zeros, c), dim=1) # torch.Size([100, 2, 1, 1])
+
 
 idx = np.arange(10).repeat(10)
 dis_c = torch.zeros(100, 10, 1, 1, device=device)
@@ -56,7 +58,8 @@ with torch.no_grad():
 fig = plt.figure(figsize=(10, 10))
 plt.axis("off")
 plt.imshow(np.transpose(vutils.make_grid(generated_img1, nrow=10, padding=2, normalize=True), (1,2,0)))
-plt.show()
+# plt.show()
+plt.savefig("myMNIST/c2_var.png")
 
 # Generate image.
 with torch.no_grad():
@@ -65,4 +68,5 @@ with torch.no_grad():
 fig = plt.figure(figsize=(10, 10))
 plt.axis("off")
 plt.imshow(np.transpose(vutils.make_grid(generated_img2, nrow=10, padding=2, normalize=True), (1,2,0)))
-plt.show()
+# plt.show()
+plt.savefig("myMNIST/c3_var.png")

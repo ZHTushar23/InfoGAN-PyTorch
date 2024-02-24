@@ -1,1 +1,6 @@
 data
+models
+__pycache__
+checkpoint
+myMNIST
+garbage.py

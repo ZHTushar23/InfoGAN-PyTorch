@@ -47,8 +47,23 @@ def get_data(dataset, batch_size):
             transforms.Normalize((0.5, 0.5, 0.5),
                 (0.5, 0.5, 0.5))])
 
-        dataset = dsets.ImageFolder(root=root+'celeba/', transform=transform)
+        # dataset = dsets.ImageFolder(root=root+'celeba/', transform=transform)
+        dataset = dsets.celeba.CelebA(root=root+'celeba/', split='train', 
+                                download=False,transform=transform)
+            
 
+    elif dataset == 'CelebAT':
+        transform = transforms.Compose([
+            transforms.Resize(32),
+            transforms.CenterCrop(32),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5),
+                (0.5, 0.5, 0.5))])
+
+        dataset = dsets.CelebA(root=root+'celebat/', split='train', 
+                                download=True,transform=transform)
+    
+    
     # Create dataloader.
     dataloader = torch.utils.data.DataLoader(dataset, 
                                             batch_size=batch_size, 

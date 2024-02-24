@@ -7,11 +7,19 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import time
 import random
+import argparse
 
 from models.mnist_model import Generator, Discriminator, DHead, QHead
 from dataloader import get_data
 from utils import *
 from config import params
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Train a model')
+    parser.add_argument('--device', type=int,  default=1, help='CUDA')
+    args = parser.parse_args()
+    return args
+
 
 if(params['dataset'] == 'MNIST'):
     from models.mnist_model import Generator, Discriminator, DHead, QHead
@@ -29,7 +37,13 @@ torch.manual_seed(seed)
 print("Random Seed: ", seed)
 
 # Use GPU if available.
-device = torch.device("cuda:0" if(torch.cuda.is_available()) else "cpu")
+# device = torch.device("cuda:0" if(torch.cuda.is_available()) else "cpu")
+# Parse the arguments
+args = parse_args()
+
+# Check if the GPU is available
+device = torch.device(args.device) if torch.cuda.is_available() else torch.device("cpu")
+
 print(device, " will be used.\n")
 
 dataloader = get_data(params['dataset'], params['batch_size'])
@@ -143,7 +157,7 @@ for epoch in range(params['num_epochs']):
         # Updating discriminator and DHead
         optimD.zero_grad()
         # Real data
-        label = torch.full((b_size, ), real_label, device=device)
+        label = torch.full((b_size, ), real_label, device=device).to(torch.float32)
         output1 = discriminator(real_data)
         probs_real = netD(output1).view(-1)
         loss_real = criterionD(probs_real, label)
