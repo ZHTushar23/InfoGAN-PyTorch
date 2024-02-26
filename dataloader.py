@@ -1,6 +1,7 @@
 import torch
 import torchvision.transforms as transforms
 import torchvision.datasets as dsets
+from dataset import NasaDataset
 
 # Directory containing the data.
 root = 'data/'
@@ -63,7 +64,9 @@ def get_data(dataset, batch_size):
         dataset = dsets.CelebA(root=root+'celebat/', split='train', 
                                 download=True,transform=transform)
     
-    
+    elif dataset == "Cloud":
+        dataset_dir ="/home/local/AD/ztushar1/LES102_MultiView_100m_F2/"
+        dataset = NasaDataset(root_dir=dataset_dir,mode="train")
     # Create dataloader.
     dataloader = torch.utils.data.DataLoader(dataset, 
                                             batch_size=batch_size, 

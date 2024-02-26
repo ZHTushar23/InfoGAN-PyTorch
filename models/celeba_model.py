@@ -84,3 +84,23 @@ class QHead(nn.Module):
 		var = torch.exp(self.conv_var(x).squeeze())
 
 		return disc_logits, mu, var
+
+if __name__=="__main__":
+	x = torch.rand(128, 3, 32, 32)
+	model = Discriminator()	
+	netD  = DHead()
+	out_discriminator = model(x)
+	probs = netD(out_discriminator)
+
+	print(probs.shape)
+	print(out_discriminator.shape)
+
+	y = torch.rand(128, 228, 1, 1)
+	netG = Generator()
+	netQ = QHead()
+	out_gen = netG(y)
+	print(out_gen.shape)
+
+	q_logits, q_mu, q_var = netQ(out_discriminator)
+
+	print(q_logits.shape)
