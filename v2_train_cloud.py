@@ -10,9 +10,11 @@ import random
 import argparse
 
 from models.mnist_model import Generator, Discriminator, DHead, QHead
-from dataloader import get_data
-from utils import *
-from v1_config import params
+# from dataloader import get_data
+from v2_utils import *
+from v2_config import params
+from v2_dataset import NasaDataset
+from visualization import *
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a model')
@@ -34,6 +36,10 @@ elif(params['dataset'] == 'Cloud'):
     # Consider the input, output size of each blocks
     from models.cloud_model import Generator, Discriminator, DHead, QHead
 
+elif(params['dataset'] == 'Cloud2'):
+    # Need to decide new models
+    # Consider the input, output size of each blocks
+    from models.cloud_model2 import Generator, Discriminator, DHead, QHead
 
 
 # Set random seed for reproducibility.
@@ -52,7 +58,12 @@ device = torch.device(args.device) if torch.cuda.is_available() else torch.devic
 
 print(device, " will be used.\n")
 
-dataloader = get_data(params['dataset'], params['batch_size'])
+# dataloader = get_data(params['dataset'], params['batch_size'])
+dataset_dir ="/home/local/AD/ztushar1/LES102_MultiView_100m_F2/"
+dataset = NasaDataset(root_dir=dataset_dir,mode="train")
+dataloader = torch.utils.data.DataLoader(dataset, 
+                                            batch_size=params['batch_size'], 
+                                            shuffle=True)
 
 # Set appropriate hyperparameters depending on the dataset used.
 # The values given in the InfoGAN paper are used.
@@ -87,15 +98,20 @@ elif(params['dataset'] == 'Cloud'):
     params['dis_c_dim'] = 10
     params['num_con_c'] = 0
 
+elif(params['dataset'] == 'Cloud2'):
+    params['num_z'] = 1
+    params['num_dis_c'] = 11
+    params['dis_c_dim'] = 72
+    params['num_con_c'] = 0
 
-# Plot the training images.
-sample_batch = next(iter(dataloader))
-plt.figure(figsize=(3, 3))
-plt.axis("off")
-plt.imshow(np.transpose(vutils.make_grid(
-    sample_batch['reflectance'][0].to(device)[ : 9], nrow=3, padding=2, normalize=True).cpu(), (1, 2, 0)))
-plt.savefig('Training Images {}'.format(params['dataset']))
-plt.close('all')
+# # Plot the training images.
+# sample_batch = next(iter(dataloader))
+# plt.figure(figsize=(3, 3))
+# plt.axis("off")
+# plt.imshow(np.transpose(vutils.make_grid(
+#     sample_batch['reflectance'][0].to(device)[ : 9], nrow=3, padding=2, normalize=True).cpu(), (1, 2, 0)))
+# plt.savefig('Training Images {}'.format(params['dataset']))
+# plt.close('all')
 
 # Initialise the network.
 netG = Generator().to(device)
@@ -126,21 +142,10 @@ optimD = optim.Adam([{'params': discriminator.parameters()}, {'params': netD.par
 optimG = optim.Adam([{'params': netG.parameters()}, {'params': netQ.parameters()}], lr=params['learning_rate'], betas=(params['beta1'], params['beta2']))
 
 # Fixed Noise
-z = torch.randn(100, params['num_z'], 1, 1, device=device)
-fixed_noise = z
-if(params['num_dis_c'] != 0):
-    idx = np.arange(params['dis_c_dim']).repeat(10)
-    dis_c = torch.zeros(100, params['num_dis_c'], params['dis_c_dim'], device=device)
-    for i in range(params['num_dis_c']):
-        dis_c[torch.arange(0, 100), i, idx] = 1.0
-
-    dis_c = dis_c.view(100, -1, 1, 1)
-
-    fixed_noise = torch.cat((fixed_noise, dis_c), dim=1)
-
-if(params['num_con_c'] != 0):
-    con_c = torch.rand(100, params['num_con_c'], 1, 1, device=device) * 2 - 1
-    fixed_noise = torch.cat((fixed_noise, con_c), dim=1)
+# z = torch.randn(100, params['num_z'], 1, 1, device=device)
+sample_batch = next(iter(dataloader))
+fixed_noise = sample_batch['CWN'][:2]
+fixed_noise = fixed_noise.to(device,dtype=torch.float32)
 
 real_label = 1
 fake_label = 0
@@ -180,7 +185,10 @@ for epoch in range(params['num_epochs']):
 
         # Fake data
         label.fill_(fake_label)
-        noise, idx = noise_sample(params['num_dis_c'], params['dis_c_dim'], params['num_con_c'], params['num_z'], b_size, device)
+        # noise, idx = noise_sample(params['num_dis_c'], params['dis_c_dim'], params['num_con_c'], params['num_z'], b_size, device)
+        noise, idx = data_batch['CWN'], data_batch['idxx']
+        noise = noise.to(device,dtype=torch.float32)
+
         fake_data = netG(noise)
         output2 = discriminator(fake_data.detach())
         probs_fake = netD(output2).view(-1)
@@ -203,16 +211,22 @@ for epoch in range(params['num_epochs']):
         gen_loss = criterionD(probs_fake, label)
 
         q_logits, q_mu, q_var = netQ(output)
-        target = torch.LongTensor(idx).to(device)
-        # Calculating loss for discrete latent code.
-        dis_loss = 0
-        for j in range(params['num_dis_c']):
-            dis_loss += criterionQ_dis(q_logits[:, j*10 : j*10 + 10], target[j])
+        target = idx.to(device, dtype=torch.float32)
 
-        # Calculating loss for continuous latent code.
+        # print(q_logits.shape)
+        # print(target.shape)
+        # Calculating loss for discrete latent code.
+        dis_loss1 = criterionQ_dis(q_logits[:,:4],target[:,:4].softmax(dim=1))
+        dis_loss2 = criterionQ_dis(q_logits[:,4:],target[:,4:].softmax(dim=1))
+        dis_loss = dis_loss1+dis_loss2
+        # dis_loss = 0
+        # for j in range(params['num_dis_c']):
+        #     dis_loss += criterionQ_dis(q_logits[:, j], target[:,j])
+
+        # # Calculating loss for continuous latent code.
         con_loss = 0
-        if (params['num_con_c'] != 0):
-            con_loss = criterionQ_con(noise[:, params['num_z']+ params['num_dis_c']*params['dis_c_dim'] : ].view(-1, params['num_con_c']), q_mu, q_var)*0.1
+        # if (params['num_con_c'] != 0):
+        #     con_loss = criterionQ_con(noise[:, params['num_z']+ params['num_dis_c']*params['dis_c_dim'] : ].view(-1, params['num_con_c']), q_mu, q_var)*0.1
 
         # Net loss for generator.
         G_loss = gen_loss + dis_loss + con_loss
@@ -246,8 +260,10 @@ for epoch in range(params['num_epochs']):
             gen_data = netG(fixed_noise).detach().cpu()
         plt.figure(figsize=(10, 10))
         plt.axis("off")
-        plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
-        plt.savefig("Epoch_%d {}".format(params['dataset']) %(epoch+1))
+        # plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
+        fname = "Epoch_%d {}".format(params['dataset']) %(epoch+1)
+        plot_cot2(gen_data[0,0],"Radiance at 0.66um",fname,False,[0,2])
+        # plt.savefig("Epoch_%d {}".format(params['dataset']) %(epoch+1))
         plt.close('all')
 
     # Save network weights.
@@ -271,9 +287,12 @@ print("-"*50)
 with torch.no_grad():
     gen_data = netG(fixed_noise).detach().cpu()
 plt.figure(figsize=(10, 10))
-plt.axis("off")
-plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
-plt.savefig("Epoch_%d_{}".format(params['dataset']) %(params['num_epochs']))
+# plt.axis("off")
+# plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
+# plt.savefig("Epoch_%d_{}".format(params['dataset']) %(params['num_epochs']))
+fname = "Epoch_%d_{}".format(params['dataset']) %(params['num_epochs'])
+plot_cot2(gen_data[0,0],"Radiance at 0.66um",fname,False,[0,2])
+
 
 # Save network weights.
 torch.save({
