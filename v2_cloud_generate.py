@@ -35,11 +35,15 @@ dataset = NasaDataset(root_dir=dataset_dir,mode="test")
 dataloader = torch.utils.data.DataLoader(dataset, 
                                             batch_size=1, 
                                             shuffle=False)
+
+total_mse_loss=[]
 for i, sample_batch in enumerate(dataloader, 0):
     noise1 = sample_batch['CWN']
     noise1 = noise1.to(device,dtype=torch.float32)
+    
 
     # Generate image.
+    netG.eval()
     with torch.no_grad():
         generated_img1 = netG(noise1).detach().cpu()
     generated_img1 = generated_img1.numpy()
@@ -49,7 +53,7 @@ for i, sample_batch in enumerate(dataloader, 0):
     sza = sza.numpy()
     vza = vza.numpy()
 
-    dir_name = "v2_cloud"
+    dir_name = "v2_cloud100"
     fname = dir_name+"/rad066_pred_"+patch_name+"_SZA_%02d_VZA_%02d.png"%(sza,vza)
     plot_cot2(generated_img1[0,0],"Pred Radiance at 0.66um",fname,False,[0,2])
 
@@ -62,4 +66,10 @@ for i, sample_batch in enumerate(dataloader, 0):
     fname = dir_name+"/cot_"+patch_name+"_SZA_%02d_VZA_%02d.png"%(sza,vza)
     plot_cot2(np.log(c_data[0,0]+1),"True COT",fname,False,[0,7])
 
+    mse_loss = np.mean((generated_img1[0,0]-r_data[0,0])**2)
+    total_mse_loss.append(mse_loss)
+
+
+
+print("Test MSE Loss: ",np.mean(total_mse_loss), "Std: ", np.std(total_mse_loss))
 print("Done!")

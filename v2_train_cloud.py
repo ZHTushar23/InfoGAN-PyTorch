@@ -12,7 +12,7 @@ import argparse
 from models.mnist_model import Generator, Discriminator, DHead, QHead
 # from dataloader import get_data
 from v2_utils import *
-from v2_config import params
+from v3_config import params
 from v2_dataset import NasaDataset
 from visualization import *
 
