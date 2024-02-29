@@ -41,6 +41,10 @@ elif(params['dataset'] == 'Cloud2'):
     # Consider the input, output size of each blocks
     from models.cloud_model2 import Generator, Discriminator, DHead, QHead
 
+elif(params['dataset'] == 'Cloud3'):
+    # Need to decide new models
+    # Consider the input, output size of each blocks
+    from models.cloud_model3 import Generator, Discriminator, DHead, QHead
 
 # Set random seed for reproducibility.
 seed = 1123
@@ -104,6 +108,11 @@ elif(params['dataset'] == 'Cloud2'):
     params['dis_c_dim'] = 72
     params['num_con_c'] = 0
 
+elif(params['dataset'] == 'Cloud3'):
+    params['num_z'] = 1
+    params['num_dis_c'] = 11
+    params['dis_c_dim'] = 72
+    params['num_con_c'] = 0
 # # Plot the training images.
 # sample_batch = next(iter(dataloader))
 # plt.figure(figsize=(3, 3))
