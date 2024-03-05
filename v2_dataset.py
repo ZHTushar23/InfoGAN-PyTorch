@@ -59,6 +59,7 @@ class NasaDataset(Dataset):
 
         # Convert to tensor
         reflectance = self.transform1(reflectance)
+        cot_data    = np.log(cot_data+1)
         cot_data    = self.transform1(cot_data)
 
 

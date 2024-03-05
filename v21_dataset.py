@@ -97,7 +97,7 @@ class NasaDataset(Dataset):
 
         sample = {'reflectance': reflectance, 'cot': cot_data,"sza":sza_temp,
                 "vza":vza_temp,"p_num":p_num, 'CWN':noise,'idxx':idxx,
-                "sza_emb": sza_embed,
+                "sza_emb": sza_embed,"vza_emb": vza_embed,
                 "name":self.csv_file[idx]['cot'].split('/')[2].split('.')[0] }
         return sample
 
@@ -113,6 +113,7 @@ if __name__=="__main__":
     print("SZA,VZA:  ",sample['sza'],sample['vza'])
     print("idx:", sample['idxx'].shape)
     print("SZA EMB: ", sample["sza_emb"].shape)
+    print("VZA EMB: ", sample["vza_emb"].shape)
     cwn = sample['CWN']
     print(cwn.shape)
 
