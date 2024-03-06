@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-load_path', required=True, help='Checkpoint to load path from')
 args = parser.parse_args()
 
-from models.cloud_model3 import Generator
+from models.cloud_model2 import Generator
 from utils import *
 from visualization import *
 from v2_dataset import NasaDataset
@@ -53,9 +53,9 @@ for i, sample_batch in enumerate(dataloader, 0):
     sza = sza.numpy()
     vza = vza.numpy()
 
-    dir_name = "v3_cloud100"
-    # fname = dir_name+"/rad066_pred_"+patch_name+"_SZA_%02d_VZA_%02d.png"%(sza,vza)
-    # plot_cot2(generated_img1[0,0],"Pred Radiance at 0.66um",fname,False,[0,2])
+    dir_name = "v2_cloud"
+    fname = dir_name+"/rad066_pred_"+patch_name+"_SZA_%02d_VZA_%02d.png"%(sza,vza)
+    plot_cot2(generated_img1[0,0],"Pred Radiance at 0.66um",fname,False,[0,2])
 
     r_data = sample_batch['reflectance'].numpy()
     # fname = dir_name+"/rad066_"+patch_name+"_SZA_%02d_VZA_%02d.png"%(sza,vza)
