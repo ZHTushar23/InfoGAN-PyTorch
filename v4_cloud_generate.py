@@ -57,8 +57,8 @@ for i, sample_batch in enumerate(dataloader, 0):
     vza = vza.numpy()
 
     dir_name = "v4_cloud"
-    fname = dir_name+"/rad066_pred_"+patch_name+"_SZA_%02d_VZA_%02d.png"%(sza,vza)
-    plot_cot2(generated_img1[0,0],"Pred Radiance at 0.66um",fname,False,[0,2])
+    # fname = dir_name+"/rad066_pred_"+patch_name+"_SZA_%02d_VZA_%02d.png"%(sza,vza)
+    # plot_cot2(generated_img1[0,0],"Pred Radiance at 0.66um",fname,False,[0,2])
 
     r_data = sample_batch['reflectance'].numpy()
     # fname = dir_name+"/rad066_"+patch_name+"_SZA_%02d_VZA_%02d.png"%(sza,vza)
