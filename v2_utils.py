@@ -68,6 +68,24 @@ def noise_sample(n_dis_c, dis_c_dim, n_con_c, n_z, batch_size, device,cot=None):
 
     return noise, idx
 
+def get_mean_and_std(loader):
+    channels_sum, channels_squared_sum, num_batches = 0, 0, 0
+    for batch, sample in enumerate (loader):
+        data_list = sample['rad_patches']
+        for data in data_list:
+            # Mean over batch, height and width, but not over the channels
+            channels_sum += torch.mean(data, dim=[0,2,3])
+            channels_squared_sum += torch.mean(data**2, dim=[0,2,3])
+            num_batches += 1
+    
+    mean = channels_sum / num_batches
+
+    # std = sqrt(E[X^2] - (E[X])^2)
+    std = (channels_squared_sum / num_batches - mean ** 2) ** 0.5
+
+    return mean, std
+
+
 if __name__=="__main__":
     # noise_sample(n_dis_c, dis_c_dim, n_con_c, n_z, batch_size, device,cot):
     
