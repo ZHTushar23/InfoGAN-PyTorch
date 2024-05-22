@@ -197,7 +197,7 @@ for fold in range(5):
         for i, data_batch in enumerate(loader, 0):
             r_train, m_train = data_batch['rad_patches'],data_batch['rad_patches2']
             idxx_train       = data_batch['idxx']
-            print(i)
+            # print(i)
 
             temp_G_losses = []
             temp_D_losses = []

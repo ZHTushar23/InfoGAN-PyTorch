@@ -79,7 +79,8 @@ f = np.arange(1,31)
 g = np.arange(61,103)
 h = np.concatenate((f,g))
 
-dataset_dir1 = "/home/local/AD/ztushar1/Data/LES_vers1_multiangle_results"
+# dataset_dir1 = "/home/local/AD/ztushar1/Data/LES_vers1_multiangle_results"
+dataset_dir1 = "/nfs/rs/psanjay/users/ztushar1/LES_vers1_multiangle_results"
 # sza_list = [60.0,40.0,20.0,4.0]
 vza_list1 = params['vza_list1']
 vza_list2 = params['vza_list2']
@@ -293,22 +294,22 @@ for fold in range(5):
 
         epoch_time = time.time() - epoch_start_time
         print("Time taken for Epoch %d: %.2fs" %(epoch + 1, epoch_time))
-        # Generate image after each epoch to check performance of the generator. Used for creating animated gif later.
-        with torch.no_grad():
-            gen_data = netG(fixed_noise).detach().cpu()
-        img_list.append(vutils.make_grid(gen_data, nrow=3, padding=2, normalize=True))
+        # # Generate image after each epoch to check performance of the generator. Used for creating animated gif later.
+        # with torch.no_grad():
+        #     gen_data = netG(fixed_noise).detach().cpu()
+        # img_list.append(vutils.make_grid(gen_data, nrow=3, padding=2, normalize=True))
 
-        # Generate image to check performance of generator.
-        if((epoch+1) == 1 or (epoch+1) == params['num_epochs']/2):
-            with torch.no_grad():
-                gen_data = netG(fixed_noise).detach().cpu()
-            plt.figure(figsize=(10, 10))
-            plt.axis("off")
-            # plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
-            fname = "Epoch_%d {}".format(params['dataset']) %(epoch+1)
-            plot_cot2(gen_data[0,0],"Radiance at 0.66um",fname,False,[0,2])
-            # plt.savefig("Epoch_%d {}".format(params['dataset']) %(epoch+1))
-            plt.close('all')
+        # # Generate image to check performance of generator.
+        # if((epoch+1) == 1 or (epoch+1) == params['num_epochs']/2):
+        #     with torch.no_grad():
+        #         gen_data = netG(fixed_noise).detach().cpu()
+        #     plt.figure(figsize=(10, 10))
+        #     plt.axis("off")
+        #     # plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
+        #     fname = "Epoch_%d {}".format(params['dataset']) %(epoch+1)
+        #     plot_cot2(gen_data[0,0],"Radiance at 0.66um",fname,False,[0,2])
+        #     # plt.savefig("Epoch_%d {}".format(params['dataset']) %(epoch+1))
+        #     plt.close('all')
 
         # Save network weights.
         if (epoch+1) % params['save_epoch'] == 0:
