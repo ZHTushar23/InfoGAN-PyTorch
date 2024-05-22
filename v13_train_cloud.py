@@ -15,7 +15,7 @@ import os
 
 # from dataloader import get_data
 from v2_utils import *
-from v18_config import params
+from v13_config import params
 from v18_dataset import NasaDataset
 from visualization import *
 
@@ -76,7 +76,7 @@ device = torch.device(args.device) if torch.cuda.is_available() else torch.devic
 print(device, " will be used.\n")
 
 # create directory to save checkpoints
-saved_model_root_dir = "v18_saved_model/sza_"+str(params['sza_list2'])+"_vza_"+str(params['vza_list2'])
+saved_model_root_dir = "v13_saved_model/sza_"+str(params['sza_list2'])+"_vza_"+str(params['vza_list2'])
 try:
     os.makedirs(saved_model_root_dir)
 except FileExistsError:

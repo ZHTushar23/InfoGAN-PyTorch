@@ -178,10 +178,14 @@ if __name__=="__main__":
         dataset_dir1 = "/nfs/rs/psanjay/users/ztushar1/LES_vers1_multiangle_results"
         dataset_dir1 = "/home/local/AD/ztushar1/Data/LES_vers1_multiangle_results"
         # sza_list = [60.0,40.0,20.0,4.0]
-        vza_list1 = [0,0]
-        vza_list2 = [15,30]
-        sza_list1 = [4.0,4.0]
-        sza_list2 = [20.0, 40.0]
+        # vza_list1 = [0,0]
+        # vza_list2 = [15,30]
+        # sza_list1 = [4.0,4.0]
+        # sza_list2 = [20.0, 40.0]
+        vza_list1 = [0]
+        vza_list2 = [0]
+        sza_list1 = [4.0,4.0, 4.0]
+        sza_list2 = [20.0, 40.0, 60.0]
         profilelist = h
         train_data = NasaDataset(profilelist=profilelist,root_dir=dataset_dir1,
                         vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
