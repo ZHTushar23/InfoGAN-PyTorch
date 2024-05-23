@@ -126,7 +126,7 @@ elif(params['dataset'] == 'Cloud18'):
 # plt.savefig('Training Images {}'.format(params['dataset']))
 # plt.close('all')
 
-for fold in range(5):
+for fold in range(1):
     saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
     try:
         os.makedirs(saved_model_dir)
@@ -162,10 +162,10 @@ for fold in range(5):
 
     # Fixed Noise
     # z = torch.randn(100, params['num_z'], 1, 1, device=device)
-    sample_batch =  loader.dataset[34]
-    fixed_noise = sample_batch['rad_patches'][0]
-    fixed_noise = torch.unsqueeze(fixed_noise,0)
-    fixed_noise = fixed_noise.to(device,dtype=torch.float32)
+    # sample_batch =  loader.dataset[34]
+    # fixed_noise = sample_batch['rad_patches'][0]
+    # fixed_noise = torch.unsqueeze(fixed_noise,0)
+    # fixed_noise = fixed_noise.to(device,dtype=torch.float32)
 
     real_label = 1
     fake_label = 0
