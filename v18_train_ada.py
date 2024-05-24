@@ -351,15 +351,15 @@ for fold in range(1):
     print('Training finished!\nTotal Time for Training: %.2fm' %(training_time / 60))
     print("-"*50)
 
-    # Generate image to check performance of trained generator.
-    with torch.no_grad():
-        gen_data = netG(fixed_noise).detach().cpu()
-    plt.figure(figsize=(10, 10))
+    # # Generate image to check performance of trained generator.
+    # with torch.no_grad():
+    #     gen_data = netG(fixed_noise).detach().cpu()
+    # plt.figure(figsize=(10, 10))
     # plt.axis("off")
     # plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
     # plt.savefig("Epoch_%d_{}".format(params['dataset']) %(params['num_epochs']))
-    fname = "Epoch_%d_{}".format(params['dataset']) %(params['num_epochs'])
-    plot_cot2(gen_data[0,0],"Radiance at 0.66um",fname,False,[0,2])
+    # fname = "Epoch_%d_{}".format(params['dataset']) %(params['num_epochs'])
+    # plot_cot2(gen_data[0,0],"Radiance at 0.66um",fname,False,[0,2])
 
 
     # Save network weights.
@@ -372,7 +372,7 @@ for fold in range(1):
         'optimG' : optimG.state_dict(),
         'params' : params,
         'training_time':training_time
-        }, 'checkpoint/model_final_{}'.format(params['dataset']))
+        }, saved_model_dir+'/model_final_{}'.format(params['dataset']))
 
 
     # Plot the training losses.
