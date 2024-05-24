@@ -244,7 +244,7 @@ for fold in range(5):
                 label.fill_(fake_label)
                 # noise, idx = noise_sample(params['num_dis_c'], params['dis_c_dim'], params['num_con_c'], params['num_z'], b_size, device)
                 # noise, idx = r_train[p_b] , idxx_train[p_b]
-                # noise = noise.to(device,dtype=torch.float32)
+                noise = noise.to(device,dtype=torch.float32)
                 # print(" probs fake: ", torch.min(noise), torch.max(noise))
                 # print("Type of idx: ", type(idx), " Shape of idx: ", idx.shape, " p_b: ", p_b)
 
