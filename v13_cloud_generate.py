@@ -65,10 +65,12 @@ netG = Generator(13).to(device)
 
 cv_mse_loss = []
 
-for fold in range (5):
+for fold in range (3):
+
     total_mse_loss=[]
     
-    load_path = saved_model_root_dir+"/fold_%01d"%(fold)
+    saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
+    load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(500)
     # Load the checkpoint file
     state_dict = torch.load(load_path)
     # Load the trained generator weights.
