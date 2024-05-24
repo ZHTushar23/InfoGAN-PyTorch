@@ -176,14 +176,14 @@ if __name__=="__main__":
         # fold=0
         print("checking fold: ", fold)
         dataset_dir1 = "/nfs/rs/psanjay/users/ztushar1/LES_vers1_multiangle_results"
-        dataset_dir1 = "/home/local/AD/ztushar1/Data/LES_vers1_multiangle_results"
+        # dataset_dir1 = "/home/local/AD/ztushar1/Data/LES_vers1_multiangle_results"
         # sza_list = [60.0,40.0,20.0,4.0]
         # vza_list1 = [0,0]
         # vza_list2 = [15,30]
         # sza_list1 = [4.0,4.0]
         # sza_list2 = [20.0, 40.0]
-        vza_list1 = [0]
-        vza_list2 = [0]
+        vza_list1 = [0,0,0,0,0,0]
+        vza_list2 = [15,30,60,-15,-30,-60]
         sza_list1 = [4.0,4.0, 4.0]
         sza_list2 = [20.0, 40.0, 60.0]
         profilelist = h
@@ -220,30 +220,36 @@ if __name__=="__main__":
         transform_func = T.Compose([
         T.Normalize(mean=data_mean, std=data_std)
         ])
-        loader.dataset.set_transform(transform_func)
-        loader.dataset.set_dis_code(True)
+        # loader.dataset.set_transform(transform_func)
+        # loader.dataset.set_dis_code(True)
 
-        data_mean, data_std = get_mean_and_std(loader)
-        print(data_mean,data_std)
+        # data_mean, data_std = get_mean_and_std(loader)
+        # print(data_mean,data_std)
+        del loader
+        del train_data
+        train_data = NasaDataset(profilelist=profilelist,root_dir=dataset_dir1,
+                vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
+                        patch_size=64,stride=10,transform=transform_func,add_dis=True)
+        loader = DataLoader(train_data, batch_size=8,shuffle=False)
 
-        for i in range(len(loader.dataset)):
-            data = loader.dataset[i]
-            # get the data
-            X, Z, idxx = data['rad_patches'],data['rad_patches2'], data['idxx']
-            print(len(X),len(Z), len(idxx))
+        # for i in range(len(loader.dataset)):
+        #     data = loader.dataset[i]
+        #     # get the data
+        #     X, Z, idxx = data['rad_patches'],data['rad_patches2'], data['idxx']
+        #     print(len(X),len(Z), len(idxx))
 
-            print(X[0].shape)
-            print(Z[0].shape)
-            print(idxx[0].shape)
+        #     print(X[0].shape)
+        #     print(Z[0].shape)
+        #     print(idxx[0].shape)
 
-            print(idxx[0])
-            print(idxx[82])
-            print(idxx[81*2])
-            print(idxx[81*3])
+        #     print(idxx[0])
+        #     print(idxx[82])
+        #     print(idxx[81*2])
+        #     print(idxx[81*3])
 
-            print(torch.max(X[0]), torch.min(X[0]))
+        #     print(torch.max(X[0]), torch.min(X[0]))
 
-            break
+        #     break
     #     # break  
     #     el = [torch.max(patch[0,:,:]).item() for patch in X]  
     #     em = [torch.min(patch[0,:,:]).item() for patch in X] 
@@ -251,12 +257,35 @@ if __name__=="__main__":
     #     temp1.append(np.min(em))
     # print(np.max(temp),np.min(temp1))
     
+        import random
         for _, data in enumerate(loader, 1):
-            # for i in range(len(train_loader.dataset)):
-            #     data = train_loader.dataset[i]
-            r_train, m_train = data['rad_patches'],data['rad_patches2']
-            print(len(r_train))
+            # get the data
+            X, Z, idxx = data['rad_patches'],data['rad_patches2'], data['idxx']
+
+            # Shuffle the indices
+            indices = list(range(len(X)))
+            random.shuffle(indices)
+            for cc in range(0, len(indices), 8):
+                chunk_indices = indices[cc:cc+8]
+                chunk_tensors = [X[ix] for ix in chunk_indices]
+                concatenated_tensor = torch.cat(chunk_tensors, dim=0)  # Concatenating along the batch dimension
+                print(concatenated_tensor.shape)
+
+                chunk_tensors = [Z[ix] for ix in chunk_indices]
+                concatenated_tensor = torch.cat(chunk_tensors, dim=0)  # Concatenating along the batch dimension
+                print(concatenated_tensor.shape)
+
+                chunk_tensors = [idxx[ix] for ix in chunk_indices]
+                concatenated_tensor = torch.cat(chunk_tensors, dim=0)  # Concatenating along the batch dimension
+                print(concatenated_tensor.shape)
+                break
             break
+        # for _, data in enumerate(loader, 1):
+        #     # for i in range(len(train_loader.dataset)):
+        #     #     data = train_loader.dataset[i]
+        #     r_train, m_train = data['rad_patches'],data['rad_patches2']
+        #     print(len(r_train))
+        #     break
     
     # dataset_dir2 = "/home/local/AD/ztushar1/Data/ncer_fill3"
 

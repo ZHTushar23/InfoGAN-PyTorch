@@ -91,15 +91,21 @@ train_data = NasaDataset(profilelist=profilelist,root_dir=dataset_dir1,
                 vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
                         patch_size=64,stride=10)
 print(len(train_data))
-loader = DataLoader(train_data, batch_size=params['batch_size'],shuffle=True)
+loader = DataLoader(train_data, batch_size=2,shuffle=True)
 data_mean, data_std = get_mean_and_std(loader)
 
 transform_func = T.Compose([
 T.Normalize(mean=data_mean, std=data_std)
 ])
-loader.dataset.set_transform(transform_func)
-loader.dataset.set_dis_code(True)
+# loader.dataset.set_transform(transform_func)
+# loader.dataset.set_dis_code(True)
+del loader
+del train_data
 
+train_data = NasaDataset(profilelist=profilelist,root_dir=dataset_dir1,
+                vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
+                        patch_size=64,stride=10,transform=transform_func,add_dis=True)
+loader = DataLoader(train_data, batch_size=params['batch_size'],shuffle=True)
 # Set appropriate hyperparameters depending on the dataset used.
 # The values given in the InfoGAN paper are used.
 # num_z : dimension of incompressible noise.
@@ -190,19 +196,32 @@ for fold in range(1):
             r_train, m_train = data_batch['rad_patches'],data_batch['rad_patches2']
             idxx_train       = data_batch['idxx']
             print(i)
+            # Shuffle the indices
+            indices = list(range(len(r_train)))
+            random.shuffle(indices)
 
             temp_G_losses = []
             temp_D_losses = []
-            for p_b in range(0, len(r_train)):
+            for cc in range(0, len(indices), 8):
+                chunk_indices = indices[cc:cc+8]
+                chunk_tensors = [m_train[ix] for ix in chunk_indices]
+                real_data     = torch.cat(chunk_tensors, dim=0) 
 
-                # X_train        = r_train[p_b]
-                # Y_train        = m_train[p_b]
+                chunk_tensors = [r_train[ix] for ix in chunk_indices]
+                noise         = torch.cat(chunk_tensors, dim=0) 
 
-                data = m_train[p_b]
+                chunk_tensors = [idxx_train[ix] for ix in chunk_indices]
+                idx         = torch.cat(chunk_tensors, dim=0) 
+
+                del chunk_tensors
+                del chunk_indices
+                # noise, idx = r_train[p_b] , idxx_train[p_b]
+
+                # data = m_train[p_b]
                 # Get batch size
-                b_size = data.size(0)
+                b_size = real_data.size(0)
                 # Transfer data tensor to GPU/CPU (device)
-                real_data = data.to(device,dtype=torch.float32)
+                real_data = real_data.to(device,dtype=torch.float32)
 
                 # Updating discriminator and DHead
                 optimD.zero_grad()
@@ -214,10 +233,14 @@ for fold in range(1):
                 # Calculate gradients.
                 loss_real.backward()
 
+
                 # Fake data
                 label.fill_(fake_label)
                 # noise, idx = noise_sample(params['num_dis_c'], params['dis_c_dim'], params['num_con_c'], params['num_z'], b_size, device)
-                noise, idx = r_train[p_b] , idxx_train[p_b]
+                # noise, idx = r_train[p_b] , idxx_train[p_b]
+
+
+
                 noise = noise.to(device,dtype=torch.float32)
                 # print(" probs fake: ", torch.min(noise), torch.max(noise))
                 # print("Type of idx: ", type(idx), " Shape of idx: ", idx.shape, " p_b: ", p_b)
