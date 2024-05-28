@@ -105,15 +105,8 @@ data_mean, data_std = get_mean_and_std(loader)
 transform_func = T.Compose([
 T.Normalize(mean=data_mean, std=data_std)
 ])
-# loader.dataset.set_transform(transform_func)
-# loader.dataset.set_dis_code(True)
-del loader
-del train_data
-
-train_data = NasaDataset(profilelist=profilelist,root_dir=dataset_dir1,
-                vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
-                        patch_size=64,stride=10,transform=transform_func,add_dis=True)
-loader = DataLoader(train_data, batch_size=params['batch_size'],shuffle=True)
+loader.dataset.set_transform(transform_func)
+loader.dataset.set_dis_code(True)
 
 # Set appropriate hyperparameters depending on the dataset used.
 # The values given in the InfoGAN paper are used.
@@ -141,8 +134,8 @@ elif(params['dataset'] == 'Cloud18'):
 # plt.savefig('Training Images {}'.format(params['dataset']))
 # plt.close('all')
 
-for fold in range(5):
-    saved_model_dir = saved_model_root_dir+"/rfold_%01d"%(fold)
+for fold in range(3,5):
+    saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
     try:
         os.makedirs(saved_model_dir)
     except FileExistsError:
@@ -177,10 +170,10 @@ for fold in range(5):
 
     # Fixed Noise
     # z = torch.randn(100, params['num_z'], 1, 1, device=device)
-    # sample_batch =  loader.dataset[34]
-    # fixed_noise = sample_batch['rad_patches'][0]
-    # fixed_noise = torch.unsqueeze(fixed_noise,0)
-    # fixed_noise = fixed_noise.to(device,dtype=torch.float32)
+    sample_batch =  loader.dataset[34]
+    fixed_noise = sample_batch['rad_patches'][0]
+    fixed_noise = torch.unsqueeze(fixed_noise,0)
+    fixed_noise = fixed_noise.to(device,dtype=torch.float32)
 
     real_label = 1
     fake_label = 0
@@ -204,31 +197,20 @@ for fold in range(5):
         for i, data_batch in enumerate(loader, 0):
             r_train, m_train = data_batch['rad_patches'],data_batch['rad_patches2']
             idxx_train       = data_batch['idxx']
-            print(i)
+            # print(i)
 
             temp_G_losses = []
             temp_D_losses = []
-            # Shuffle the indices
-            indices = list(range(len(r_train)))
-            random.shuffle(indices)
+            for p_b in range(0, len(r_train)):
 
-            for cc in range(0, len(indices), 8):
-                chunk_indices = indices[cc:cc+8]
-                chunk_tensors = [m_train[ix] for ix in chunk_indices]
-                real_data     = torch.cat(chunk_tensors, dim=0) 
+                # X_train        = r_train[p_b]
+                # Y_train        = m_train[p_b]
 
-                chunk_tensors = [r_train[ix] for ix in chunk_indices]
-                noise         = torch.cat(chunk_tensors, dim=0) 
-
-                chunk_tensors = [idxx_train[ix] for ix in chunk_indices]
-                idx         = torch.cat(chunk_tensors, dim=0) 
-
-                del chunk_tensors
-                del chunk_indices
+                data = m_train[p_b]
                 # Get batch size
-                b_size = real_data.size(0)
+                b_size = data.size(0)
                 # Transfer data tensor to GPU/CPU (device)
-                real_data = real_data.to(device,dtype=torch.float32)
+                real_data = data.to(device,dtype=torch.float32)
 
                 # Updating discriminator and DHead
                 optimD.zero_grad()
@@ -243,7 +225,7 @@ for fold in range(5):
                 # Fake data
                 label.fill_(fake_label)
                 # noise, idx = noise_sample(params['num_dis_c'], params['dis_c_dim'], params['num_con_c'], params['num_z'], b_size, device)
-                # noise, idx = r_train[p_b] , idxx_train[p_b]
+                noise, idx = r_train[p_b] , idxx_train[p_b]
                 noise = noise.to(device,dtype=torch.float32)
                 # print(" probs fake: ", torch.min(noise), torch.max(noise))
                 # print("Type of idx: ", type(idx), " Shape of idx: ", idx.shape, " p_b: ", p_b)
@@ -320,22 +302,22 @@ for fold in range(5):
 
         epoch_time = time.time() - epoch_start_time
         print("Time taken for Epoch %d: %.2fs" %(epoch + 1, epoch_time))
-        # # Generate image after each epoch to check performance of the generator. Used for creating animated gif later.
-        # with torch.no_grad():
-        #     gen_data = netG(fixed_noise).detach().cpu()
-        # img_list.append(vutils.make_grid(gen_data, nrow=3, padding=2, normalize=True))
+        # Generate image after each epoch to check performance of the generator. Used for creating animated gif later.
+        with torch.no_grad():
+            gen_data = netG(fixed_noise).detach().cpu()
+        img_list.append(vutils.make_grid(gen_data, nrow=3, padding=2, normalize=True))
 
-        # # Generate image to check performance of generator.
-        # if((epoch+1) == 1 or (epoch+1) == params['num_epochs']/2):
-        #     with torch.no_grad():
-        #         gen_data = netG(fixed_noise).detach().cpu()
-        #     plt.figure(figsize=(10, 10))
-        #     plt.axis("off")
-        #     # plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
-        #     fname = "Epoch_%d {}".format(params['dataset']) %(epoch+1)
-        #     plot_cot2(gen_data[0,0],"Radiance at 0.66um",fname,False,[0,2])
-        #     # plt.savefig("Epoch_%d {}".format(params['dataset']) %(epoch+1))
-        #     plt.close('all')
+        # Generate image to check performance of generator.
+        if((epoch+1) == 1 or (epoch+1) == params['num_epochs']/2):
+            with torch.no_grad():
+                gen_data = netG(fixed_noise).detach().cpu()
+            plt.figure(figsize=(10, 10))
+            plt.axis("off")
+            # plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
+            fname = "Epoch_%d {}".format(params['dataset']) %(epoch+1)
+            plot_cot2(gen_data[0,0],"Radiance at 0.66um",fname,False,[0,2])
+            # plt.savefig("Epoch_%d {}".format(params['dataset']) %(epoch+1))
+            plt.close('all')
 
         # Save network weights.
         if (epoch+1) % params['save_epoch'] == 0:
@@ -354,15 +336,15 @@ for fold in range(5):
     print('Training finished!\nTotal Time for Training: %.2fm' %(training_time / 60))
     print("-"*50)
 
-    # # Generate image to check performance of trained generator.
-    # with torch.no_grad():
-    #     gen_data = netG(fixed_noise).detach().cpu()
-    # plt.figure(figsize=(10, 10))
-    # # plt.axis("off")
-    # # plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
-    # # plt.savefig("Epoch_%d_{}".format(params['dataset']) %(params['num_epochs']))
-    # fname = "Epoch_%d_{}".format(params['dataset']) %(params['num_epochs'])
-    # plot_cot2(gen_data[0,0],"Radiance at 0.66um",fname,False,[0,2])
+    # Generate image to check performance of trained generator.
+    with torch.no_grad():
+        gen_data = netG(fixed_noise).detach().cpu()
+    plt.figure(figsize=(10, 10))
+    # plt.axis("off")
+    # plt.imshow(np.transpose(vutils.make_grid(gen_data, nrow=10, padding=2, normalize=True), (1,2,0)))
+    # plt.savefig("Epoch_%d_{}".format(params['dataset']) %(params['num_epochs']))
+    fname = "Epoch_%d_{}".format(params['dataset']) %(params['num_epochs'])
+    plot_cot2(gen_data[0,0],"Radiance at 0.66um",fname,False,[0,2])
 
 
     # Save network weights.
@@ -375,7 +357,7 @@ for fold in range(5):
         'optimG' : optimG.state_dict(),
         'params' : params,
         'training_time':training_time
-        }, saved_model_dir+'/model_final_{}'.format(params['dataset']))
+        }, 'checkpoint/model_final_{}'.format(params['dataset']))
 
 
     # Plot the training losses.
