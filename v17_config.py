@@ -9,6 +9,6 @@ params = {
     'dataset'  : 'Cloud18',# Dataset to use. Choose from {MNIST, SVHN, CelebA, FashionMNIST}. CASE MUST MATCH EXACTLY!!!!!
     'vza_list1': [0],
     'vza_list2': [0],
-    'sza_list1': [4.0,4.0,4.0],
-    'sza_list2': [20.0, 40.0, 60.0]
+    'sza_list1': [20.0, 40.0, 60.0],
+    'sza_list2': [4.0,4.0,4.0]
 }
