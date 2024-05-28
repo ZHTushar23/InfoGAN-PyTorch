@@ -7,8 +7,8 @@ params = {
     'beta2': 0.999,
     'save_epoch' : 25,# After how many epochs to save checkpoints and generate test output.
     'dataset'  : 'Cloud18',# Dataset to use. Choose from {MNIST, SVHN, CelebA, FashionMNIST}. CASE MUST MATCH EXACTLY!!!!!
-    'vza_list1': [0,0,0,0,0,0],
-    'vza_list2': [15,30, 60, -15, -30, -60],
+    'vza_list1': [15,30, 60, -15, -30, -60],
+    'vza_list2': [0,0,0,0,0,0],
     'sza_list1': [4.0],
     'sza_list2': [4.0]
 }
