@@ -46,12 +46,12 @@ T.Normalize(mean=data_mean, std=data_std)
 del loader
 del train_data
 
-# test_data = NasaDataset(profilelist=np.arange(31,51),root_dir=dataset_dir1,
-#                 vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
-#                         patch_size=64,stride=10,transform=transform_func,add_dis=True)
 test_data = NasaDataset(profilelist=np.arange(31,51),root_dir=dataset_dir1,
-                vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = [4.0],sza_list2 = [20.0],
+                vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
                         patch_size=64,stride=10,transform=transform_func,add_dis=True)
+# test_data = NasaDataset(profilelist=np.arange(31,51),root_dir=dataset_dir1,
+#                 vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = [4.0],sza_list2 = [20.0],
+#                         patch_size=64,stride=10,transform=transform_func,add_dis=True)
 
 dataloader = DataLoader(test_data, batch_size=128,shuffle=False)
 
