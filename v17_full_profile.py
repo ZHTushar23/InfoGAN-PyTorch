@@ -6,14 +6,17 @@
 
 
 # import libraries
-from v13_utilities import *
+from v2_utils import *
 from v18_dataset import *
 from visualization import *
 import os
 from models.cloud_model18 import Generator
+import torchvision.transforms as T
+import torchvision.transforms.functional as TF
 
 # dataset dir
-dataset_dir1 = "/nfs/rs/psanjay/users/ztushar1/LES_vers1_multiangle_results"
+# dataset_dir1 = "/nfs/rs/psanjay/users/ztushar1/LES_vers1_multiangle_results"
+dataset_dir1 = "/home/local/AD/ztushar1/Data/LES_vers1_multiangle_results"
 f = np.arange(1,31)
 g = np.arange(61,103)
 h = np.concatenate((f,g))
@@ -23,7 +26,7 @@ vza_full_list = [60,30,15,0,-15,-30,-60]
 
 
 
-def get_profile_pred(model,X_test,Y_test,transform2,patch_size=64,stride=10):
+def get_profile_pred(model,X_test,Y_test,dis_c_test,transform2,device,patch_size=64,stride=10):
 
 
     # stride = 2
@@ -36,7 +39,8 @@ def get_profile_pred(model,X_test,Y_test,transform2,patch_size=64,stride=10):
 
     #2 convert to tensor
     
-    X_test = TF.to_tensor(X_test)
+    X_test     = TF.to_tensor(X_test)
+    dis_c_test = TF.to_tensor(dis_c_test)
     # print(torch.min(X_test))
     # print(torch.max(X_test))
     Y_test = TF.to_tensor(Y_test)
@@ -44,6 +48,8 @@ def get_profile_pred(model,X_test,Y_test,transform2,patch_size=64,stride=10):
     Y_pred = np.zeros_like(map)
     #3 Normalize data
     X_test  = transform2(X_test)
+
+    X_test  = torch.cat((X_test, dis_c_test), dim=0)
 
     # patch_holder = np.empty((r*c,patch_height,patch_width),dtype=float) 
     for row in range(r):
@@ -61,10 +67,14 @@ def get_profile_pred(model,X_test,Y_test,transform2,patch_size=64,stride=10):
             # else:
             #     label = Y_test[0:2,row_start:row_end,col_start:col_end]
 
-
-
-            patch_pred = get_predictions(model=model,X_test=patch,Y_test=None)
+            patch = torch.unsqueeze(patch,0)
+            patch = patch.to(device, dtype=torch.float)
+            model = model.to(device)
+            with torch.no_grad():
+                patch_pred = model(patch).detach().cpu().numpy()
+            
             # print("pred patch shape: ",patch_pred.shape)
+            patch_pred = np.squeeze(patch_pred)
             # print("pred patch min max: ",np.min(patch_pred[1,:,:]),np.max(patch_pred[1,:,:]))
             # map[row_start:row_end,col_start:col_end] =map[row_start:row_end,col_start:col_end] +np.ones((10,10))
           
@@ -86,10 +96,10 @@ def get_profile_pred(model,X_test,Y_test,transform2,patch_size=64,stride=10):
 
 
 # define a function that takes model's name and do the rests
-def run_test(params):
+def run_test(params,m_dir):
 
     # create directory to save checkpoints
-    saved_model_root_dir = "v17_saved_model/sza_"+str(params['sza_list2'])+"_vza_"+str(params['vza_list2'])
+    saved_model_root_dir = m_dir+"/sza_"+str(params['sza_list2'])+"_vza_"+str(params['vza_list2'])
 
 
     # sza_values_str = '_'.join(map(str, args.sza))
@@ -126,9 +136,10 @@ def run_test(params):
     netG = Generator(13).to(device)
 
     total_loss=[]
+    rr=250
     for fold in range(5):
-        saved_model_dir = saved_model_root_dir+"/rfold_%01d"%(fold)
-        load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(475)
+        saved_model_dir = saved_model_root_dir+"/nfold_%01d"%(fold)
+        load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(rr)
         # load_path  = 'checkpoint/model_final_{}'.format(params['dataset'])
         # Load the checkpoint file
         state_dict = torch.load(load_path)
@@ -156,7 +167,9 @@ def run_test(params):
         temp  = np.nan_to_num(np.array(hf.get("Reflectance_100m_resolution")))
         temp2 = np.nan_to_num(np.array(hf.get("Native_Cloud_fraction_(100m)")))
         hf.close()
-
+        
+        input_data_list, output_data_list , dis_c_list = [],[], []
+        sz_vz_list = []
         for sza in sza_list1:
             s = sza_full_list.index(sza)
             for vza in vza_list1:
@@ -168,51 +181,63 @@ def run_test(params):
                 r_data_ip[:,:,0]   = temp[s,v,0,:,:]
                 # reflectance at 2.13 um
                 r_data_ip[:,:,1]   = temp[s,v,1,:,:]
+
+                input_data_list.append(r_data_ip)
         
+
         for sza in sza_list2:
             s = sza_full_list.index(sza)
             for vza in vza_list2:
                 v = vza_full_list.index(vza)
 
                 r_data_op   = np.empty((144,144,2), dtype=float) 
+                dis_c    = np.zeros((144,144,11), dtype=float) # 4+7=11 sza+vza
+
+                # assign 1 to sza and vza channels
+                dis_c[:,:,s] = 1
+                dis_c[:,:,v+4] = 1
+                dis_c_list.append(dis_c)
 
                 # reflectance at 0.66 um
                 r_data_op[:,:,0]   = temp[s,v,0,:,:]
                 # reflectance at 2.13 um
                 r_data_op[:,:,1]   = temp[s,v,1,:,:]
+                output_data_list.append(r_data_op)
+                sz_vz_list.append([sza,vza])
 
-        for aa in range (len(sza_list2))
-            profile, pred = get_profile_pred(model,r_data_ip[aa],r_data_op[aa],transform_func)
+        for aa in range (len(input_data_list)):
+            profile, pred = get_profile_pred(netG,input_data_list[aa],output_data_list[aa],dis_c_list[aa],transform_func,device )
 
 
             limit1 = [0,2]
             limit2 = [0,1]
             use_log=False
+            # print(dir_name)
 
             # Plot Input Radiance
-            fname = dir_name+"/rad066_profile_%03d.png"%(p_num )
-            plot_cot2(cot=r_data_ip[:,:,0],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
+            fname = dir_name+"/rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            plot_cot2(cot=input_data_list[aa][:,:,0],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/op_rad066_profile_%03d.png"%(p_num )
+            fname = dir_name+"/op_rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
             plot_cot2(cot=profile[0,:,:],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/op_pred_rad066_profile_%03d.png"%(p_num )
+            fname = dir_name+"/op_pred_rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
             plot_cot2(cot=pred[0,:,:],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/abs_error_066_profile_%03d.png"%(p_num )
+            fname = dir_name+"/abs_error_066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
             plot_cot2(cot=(profile[0,:,:]-pred[0,:,:]),title="Absolute Error 0.66 um",fname=fname,use_log=use_log,limit=limit2)    
 
             # Plot Input Radiance
-            fname = dir_name+"/rad213_profile_%03d.png"%(p_num )
-            plot_cot2(cot=r_data_ip[:,:,1],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
+            fname = dir_name+"/rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            plot_cot2(cot=input_data_list[aa][:,:,1],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/op_rad213_profile_%03d.png"%(p_num )
+            fname = dir_name+"/op_rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
             plot_cot2(cot=profile[1,:,:],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/op_pred_rad213_profile_%03d.png"%(p_num )
+            fname = dir_name+"/op_pred_rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
             plot_cot2(cot=pred[1,:,:],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/abs_error_213_profile_%03d.png"%(p_num )
+            fname = dir_name+"/abs_error_213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
             plot_cot2(cot=np.abs(profile[1,:,:]-pred[1,:,:]),title="Absolute Error 2.13 um",fname=fname,use_log=use_log,limit=limit2)          
 
     print("Done!")
@@ -220,96 +245,33 @@ def run_test(params):
 
 
 if __name__=="__main__":
-    model_name = "cam"
-    # model_filenames= ["cam_fold_0_20240319_235931.pth",
-    #                 "cam_fold_1_20240320_004916.pth",
-    #                 "cam_fold_2_20240320_020050.pth",
-    #                 "cam_fold_3_20240320_025421.pth",
-    #                 "cam_fold_4_20240320_034852.pth"]
-    # model_filenames= [
-    #     # "cam_fold_0_20240321_170151.pth",
-    #                 "cam_fold_1_20240321_174205.pth",
-    #                 "cam_fold_2_20240321_182402.pth",
-    #                 "cam_fold_3_20240321_190157.pth",
-    #                 "cam_fold_4_20240321_195702.pth"]  #L1
-    model_filenames= ["cam_fold_0_20240401_141821.pth",
-                    "cam_fold_1_20240401_153231.pth",
-                    "cam_fold_2_20240401_170157.pth",
-                    "cam_fold_3_20240401_180901.pth",
-                    "cam_fold_4_20240401_192955.pth"]     # ssim w penalty 6
-    
+    params = {
+    'batch_size': 8,# Batch size.
+    'num_epochs': 500,# Number of epochs to train for.
+    'learning_rate': 2e-4,# Learning rate.
+    'beta1': 0.5,
+    'beta2': 0.999,
+    'save_epoch' : 25,# After how many epochs to save checkpoints and generate test output.
+    'dataset'  : 'Cloud18',# Dataset to use. Choose from {MNIST, SVHN, CelebA, FashionMNIST}. CASE MUST MATCH EXACTLY!!!!!
+    'vza_list1': [0],
+    'vza_list2': [0],
+    'sza_list1': [4.0,4.0,4.0],
+    'sza_list2': [20.0, 40.0, 60.0]
+    }
+    m_dir = "v17_saved_model"
 
-    f=4
-    sza_list  = [4.0]
-    vza_list1 = [0] # [30,0,-30] 
-    vza_list2 = [15]
-
-
-    # model_filenames= ["cam_fold_0_20240408_010912.pth",
-    #                 "cam_fold_1_20240408_020145.pth",
-    #                 "cam_fold_2_20240408_025128.pth",
-    #                 "cam_fold_3_20240408_040155.pth",
-    #                 "cam_fold_4_20240408_044517.pth"]     # ssim w penalty 6
-    
-
-    # f=1
-    # sza_list  = [4.0]
-    # vza_list1 = [0] # [30,0,-30] 
-    # vza_list2 = [60]
-
-    # model_filenames= ["cam_fold_0_20240319_235949.pth",
-    #                 "cam_fold_1_20240320_010552.pth",
-    #                 "cam_fold_2_20240320_014611.pth",
-    #                 "cam_fold_3_20240320_022530.pth",
-    #                 "cam_fold_4_20240320_034454.pth"]
-
-    # model_filenames= [
-    #     # "cam_fold_0_20240321_170151.pth",
-    #                 "cam_fold_1_20240321_182146.pth",
-    #                 "cam_fold_2_20240321_191429.pth",
-    #                 "cam_fold_3_20240321_194553.pth",
-    #                 "cam_fold_4_20240321_202556.pth"]  # L1
-
-    # a= [0]
-    # b = [-15]
-    # f=2
-
-    # model_filenames= ["cam_fold_0_20240320_000032.pth",
-    #                 "cam_fold_1_20240320_011438.pth",
-    #                 "cam_fold_2_20240320_015857.pth",
-    #                 "cam_fold_3_20240320_023302.pth",
-    #                 "cam_fold_4_20240320_032307.pth"]
-
-    # model_filenames= [
-    #     # "cam_fold_0_20240320_000032.pth",
-    #                 "cam_fold_1_20240321_182626.pth",
-    #                 "cam_fold_2_20240321_191028.pth",
-    #                 "cam_fold_3_20240321_201229.pth",
-    #                 "cam_fold_4_20240321_204651.pth"]  #L1
-    # a= [0]
-    # b = [30]
-    # f=3
-
-    # model_filenames= ["cam_fold_0_20240320_000109.pth",
-    #                 "cam_fold_1_20240320_014435.pth",
-    #                 "cam_fold_2_20240320_032235.pth",
-    #                 "cam_fold_3_20240320_040106.pth",
-    #                 "cam_fold_4_20240320_050325.pth"]
-
-    # model_filenames= [
-    #     # "cam_fold_0_20240320_000109.pth",
-    #                 "cam_fold_1_20240321_180946.pth",
-    #                 "cam_fold_2_20240321_185432.pth",
-    #                 "cam_fold_3_20240321_195223.pth",
-    #                 "cam_fold_4_20240321_214544.pth"] # L1
-
-    # a= [0]
-    # b = [-30]
-    # f=0
-
-    out = {"model_filenames":model_filenames, "model_name":model_name,
-            "vza1":vza_list1, "vza2":vza_list2,"sza":sza_list,
-            "f":f,"fig":"20240408_010912"}
-    run_test(out)
-    # for p_b in range(0, 36, 2):
-    #     print(p_b)
+    # params = {
+    # 'batch_size': 64,# Batch size.
+    # 'num_epochs': 500,# Number of epochs to train for.
+    # 'learning_rate': 2e-4,# Learning rate.
+    # 'beta1': 0.5,
+    # 'beta2': 0.999,
+    # 'save_epoch' : 25,# After how many epochs to save checkpoints and generate test output.
+    # 'dataset'  : 'Cloud18',# Dataset to use. Choose from {MNIST, SVHN, CelebA, FashionMNIST}. CASE MUST MATCH EXACTLY!!!!!
+    # 'vza_list1': [0,0,0,0,0,0],
+    # 'vza_list2': [15,30, 60, -15, -30, -60],
+    # 'sza_list1': [4.0],
+    # 'sza_list2': [4.0]
+    # }
+    # m_dir = "v13_saved_model"
+    run_test(params, m_dir)

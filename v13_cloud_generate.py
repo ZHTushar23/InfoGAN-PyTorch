@@ -46,13 +46,13 @@ T.Normalize(mean=data_mean, std=data_std)
 del loader
 del train_data
 
-# test_data = NasaDataset(profilelist=np.arange(31,51),root_dir=dataset_dir1,
-#                 vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
-#                         patch_size=64,stride=10,transform=transform_func,add_dis=True)
-
 test_data = NasaDataset(profilelist=np.arange(31,51),root_dir=dataset_dir1,
-                vza_list1 = [0],vza_list2 = [-60], sza_list1 = sza_list1,sza_list2 = sza_list2,
+                vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
                         patch_size=64,stride=10,transform=transform_func,add_dis=True)
+
+# test_data = NasaDataset(profilelist=np.arange(31,51),root_dir=dataset_dir1,
+#                 vza_list1 = [0],vza_list2 = [60], sza_list1 = sza_list1,sza_list2 = sza_list2,
+#                         patch_size=64,stride=10,transform=transform_func,add_dis=True)
 
 dataloader = DataLoader(test_data, batch_size=128,shuffle=False)
 
@@ -74,8 +74,8 @@ for fold in range (5):
 
     total_mse_loss=[]
     
-    saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
-    load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(25)
+    saved_model_dir = saved_model_root_dir+"/nfold_%01d"%(fold)
+    load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(250)
     # Load the checkpoint file
     state_dict = torch.load(load_path)
     # Load the trained generator weights.
