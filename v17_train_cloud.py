@@ -141,7 +141,7 @@ elif(params['dataset'] == 'Cloud18'):
 # plt.savefig('Training Images {}'.format(params['dataset']))
 # plt.close('all')
 
-for fold in range(5):
+for fold in range(1,5):
     saved_model_dir = saved_model_root_dir+"/rfold_%01d"%(fold)
     try:
         os.makedirs(saved_model_dir)
