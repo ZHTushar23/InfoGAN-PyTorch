@@ -136,7 +136,7 @@ def run_test(params,m_dir):
     netG = Generator(13).to(device)
 
     total_loss=[]
-    rr=250
+    rr=100
     for fold in range(5):
         saved_model_dir = saved_model_root_dir+"/nfold_%01d"%(fold)
         load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(rr)
@@ -245,33 +245,33 @@ def run_test(params,m_dir):
 
 
 if __name__=="__main__":
-    params = {
-    'batch_size': 8,# Batch size.
-    'num_epochs': 500,# Number of epochs to train for.
-    'learning_rate': 2e-4,# Learning rate.
-    'beta1': 0.5,
-    'beta2': 0.999,
-    'save_epoch' : 25,# After how many epochs to save checkpoints and generate test output.
-    'dataset'  : 'Cloud18',# Dataset to use. Choose from {MNIST, SVHN, CelebA, FashionMNIST}. CASE MUST MATCH EXACTLY!!!!!
-    'vza_list1': [0],
-    'vza_list2': [0],
-    'sza_list1': [4.0,4.0,4.0],
-    'sza_list2': [20.0, 40.0, 60.0]
-    }
-    m_dir = "v17_saved_model"
-
     # params = {
-    # 'batch_size': 64,# Batch size.
+    # 'batch_size': 8,# Batch size.
     # 'num_epochs': 500,# Number of epochs to train for.
     # 'learning_rate': 2e-4,# Learning rate.
     # 'beta1': 0.5,
     # 'beta2': 0.999,
     # 'save_epoch' : 25,# After how many epochs to save checkpoints and generate test output.
     # 'dataset'  : 'Cloud18',# Dataset to use. Choose from {MNIST, SVHN, CelebA, FashionMNIST}. CASE MUST MATCH EXACTLY!!!!!
-    # 'vza_list1': [0,0,0,0,0,0],
-    # 'vza_list2': [15,30, 60, -15, -30, -60],
-    # 'sza_list1': [4.0],
-    # 'sza_list2': [4.0]
+    # 'vza_list1': [0],
+    # 'vza_list2': [0],
+    # 'sza_list1': [4.0,4.0,4.0],
+    # 'sza_list2': [20.0, 40.0, 60.0]
     # }
-    # m_dir = "v13_saved_model"
+    # m_dir = "v17_saved_model"
+
+    params = {
+    'batch_size': 64,# Batch size.
+    'num_epochs': 500,# Number of epochs to train for.
+    'learning_rate': 2e-4,# Learning rate.
+    'beta1': 0.5,
+    'beta2': 0.999,
+    'save_epoch' : 25,# After how many epochs to save checkpoints and generate test output.
+    'dataset'  : 'Cloud18',# Dataset to use. Choose from {MNIST, SVHN, CelebA, FashionMNIST}. CASE MUST MATCH EXACTLY!!!!!
+    'vza_list1': [0,0,0,0,0,0],
+    'vza_list2': [15,30, 60, -15, -30, -60],
+    'sza_list1': [4.0],
+    'sza_list2': [4.0]
+    }
+    m_dir = "v13_saved_model"
     run_test(params, m_dir)

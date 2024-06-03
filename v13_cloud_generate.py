@@ -75,7 +75,7 @@ for fold in range (5):
     total_mse_loss=[]
     
     saved_model_dir = saved_model_root_dir+"/nfold_%01d"%(fold)
-    load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(250)
+    load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(100)
     # Load the checkpoint file
     state_dict = torch.load(load_path)
     # Load the trained generator weights.
