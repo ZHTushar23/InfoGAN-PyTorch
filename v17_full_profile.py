@@ -50,7 +50,7 @@ def get_profile_pred(model,X_test,Y_test,dis_c_test,transform2,device,patch_size
     X_test  = transform2(X_test)
 
     X_test  = torch.cat((X_test, dis_c_test), dim=0)
-
+    mse_losss=[]
     # patch_holder = np.empty((r*c,patch_height,patch_width),dtype=float) 
     for row in range(r):
         for col in range(c):
@@ -59,6 +59,7 @@ def get_profile_pred(model,X_test,Y_test,dis_c_test,transform2,device,patch_size
             col_start =  min(col*stride,img_width-patch_width)
             col_end = col_start+patch_width
             patch = X_test[:,row_start:row_end,col_start:col_end]
+            label = Y_test[0:2,row_start:row_end,col_start:col_end]
 
             # if model_name=="okamura":
             #     label = Y_test[0:2,row_start+2:row_end-2,col_start+2:col_end-2]
@@ -74,12 +75,18 @@ def get_profile_pred(model,X_test,Y_test,dis_c_test,transform2,device,patch_size
                 patch_pred = model(patch).detach().cpu().numpy()
             
             # print("pred patch shape: ",patch_pred.shape)
+            label = label.numpy()
             patch_pred = np.squeeze(patch_pred)
             # print("pred patch min max: ",np.min(patch_pred[1,:,:]),np.max(patch_pred[1,:,:]))
             # map[row_start:row_end,col_start:col_end] =map[row_start:row_end,col_start:col_end] +np.ones((10,10))
           
             map[:,row_start:row_end,col_start:col_end] +=1
             Y_pred[:,row_start:row_end,col_start:col_end] +=patch_pred
+
+            mm_l = (patch_pred-label)**2
+            mse_losss.append(np.mean(mm_l))
+
+            
 
     
 
@@ -90,7 +97,7 @@ def get_profile_pred(model,X_test,Y_test,dis_c_test,transform2,device,patch_size
 
     Y_test = Y_test.cpu().detach().numpy()
 
-    return Y_test, Y_pred
+    return Y_test, Y_pred, mse_losss
 
 
 
@@ -135,8 +142,9 @@ def run_test(params,m_dir):
     # Create the generator network.
     netG = Generator(13).to(device)
 
-    total_loss=[]
-    rr=100
+    
+    rr=250
+    cv_mse_loss = []
     for fold in range(5):
         saved_model_dir = saved_model_root_dir+"/nfold_%01d"%(fold)
         load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(rr)
@@ -205,41 +213,48 @@ def run_test(params,m_dir):
                 output_data_list.append(r_data_op)
                 sz_vz_list.append([sza,vza])
 
+        total_loss=[]
         for aa in range (len(input_data_list)):
-            profile, pred = get_profile_pred(netG,input_data_list[aa],output_data_list[aa],dis_c_list[aa],transform_func,device )
-
+            profile, pred, mm_loss = get_profile_pred(netG,input_data_list[aa],output_data_list[aa],dis_c_list[aa],transform_func,device )
+            total_loss+=mm_loss
+            # print(len(total_loss))
 
             limit1 = [0,2]
             limit2 = [0,1]
             use_log=False
             # print(dir_name)
 
-            # Plot Input Radiance
-            fname = dir_name+"/rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            plot_cot2(cot=input_data_list[aa][:,:,0],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
+            # # Plot Input Radiance
+            # fname = dir_name+"/rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            # plot_cot2(cot=input_data_list[aa][:,:,0],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/op_rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            plot_cot2(cot=profile[0,:,:],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
+            # fname = dir_name+"/op_rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            # plot_cot2(cot=profile[0,:,:],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/op_pred_rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            plot_cot2(cot=pred[0,:,:],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
+            # fname = dir_name+"/op_pred_rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            # plot_cot2(cot=pred[0,:,:],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/abs_error_066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            plot_cot2(cot=(profile[0,:,:]-pred[0,:,:]),title="Absolute Error 0.66 um",fname=fname,use_log=use_log,limit=limit2)    
+            # fname = dir_name+"/abs_error_066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            # plot_cot2(cot=(profile[0,:,:]-pred[0,:,:]),title="Absolute Error 0.66 um",fname=fname,use_log=use_log,limit=limit2)    
 
-            # Plot Input Radiance
-            fname = dir_name+"/rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            plot_cot2(cot=input_data_list[aa][:,:,1],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
+            # # Plot Input Radiance
+            # fname = dir_name+"/rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            # plot_cot2(cot=input_data_list[aa][:,:,1],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/op_rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            plot_cot2(cot=profile[1,:,:],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
+            # fname = dir_name+"/op_rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            # plot_cot2(cot=profile[1,:,:],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/op_pred_rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            plot_cot2(cot=pred[1,:,:],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
+            # fname = dir_name+"/op_pred_rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            # plot_cot2(cot=pred[1,:,:],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
 
-            fname = dir_name+"/abs_error_213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            plot_cot2(cot=np.abs(profile[1,:,:]-pred[1,:,:]),title="Absolute Error 2.13 um",fname=fname,use_log=use_log,limit=limit2)          
+            # fname = dir_name+"/abs_error_213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            # plot_cot2(cot=np.abs(profile[1,:,:]-pred[1,:,:]),title="Absolute Error 2.13 um",fname=fname,use_log=use_log,limit=limit2)          
 
+        cv_mse_loss.append(np.mean(total_loss))
+        print("Fold MSE Loss: ",np.mean(total_loss), "Std: ", np.std(total_loss))
+
+    print("Test MSE Loss: ",np.mean(cv_mse_loss), "Std: ", np.std(cv_mse_loss))
+        
     print("Done!")
 
 
