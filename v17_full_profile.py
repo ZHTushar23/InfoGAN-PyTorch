@@ -15,8 +15,8 @@ import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 
 # dataset dir
-# dataset_dir1 = "/nfs/rs/psanjay/users/ztushar1/LES_vers1_multiangle_results"
-dataset_dir1 = "/home/local/AD/ztushar1/Data/LES_vers1_multiangle_results"
+dataset_dir1 = "/nfs/rs/psanjay/users/ztushar1/LES_vers1_multiangle_results"
+# dataset_dir1 = "/home/local/AD/ztushar1/Data/LES_vers1_multiangle_results"
 f = np.arange(1,31)
 g = np.arange(61,103)
 h = np.concatenate((f,g))
@@ -125,32 +125,43 @@ def run_test(params,m_dir):
     profilelist = h
 
 
-    # compute std and mean for the new train split
-    train_data = NasaDataset(profilelist=h,root_dir=dataset_dir1,
-                    vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
-                            patch_size=64,stride=10)
+    # # compute std and mean for the new train split
+    # train_data = NasaDataset(profilelist=h,root_dir=dataset_dir1,
+    #                 vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
+    #                         patch_size=64,stride=10)
 
-    loader = DataLoader(train_data, batch_size=params['batch_size'],shuffle=True)
-    data_mean, data_std = get_mean_and_std(loader)
+    # loader = DataLoader(train_data, batch_size=params['batch_size'],shuffle=True)
+    # data_mean, data_std = get_mean_and_std(loader)
 
+    # transform_func = T.Compose([
+    # T.Normalize(mean=data_mean, std=data_std)
+    # ])
+
+    # del loader, train_data
+    data_mean, data_std = torch.tensor([0.1329, 0.1087], dtype=torch.float64), torch.tensor([0.1537, 0.0924], dtype=torch.float64)
     transform_func = T.Compose([
     T.Normalize(mean=data_mean, std=data_std)
     ])
-
-    del loader, train_data
-
     # Create the generator network.
     netG = Generator(13).to(device)
 
     
-    rr=250
+    rr=450
+    vza_list1 = [0]
+    vza_list2 = [60]
+    sza_list1 = [4.0]
+    sza_list2 = [60.0]
     cv_mse_loss = []
     for fold in range(5):
-        saved_model_dir = saved_model_root_dir+"/nfold_%01d"%(fold)
+        if fold==2:
+            rr=375
+        elif fold==0:
+            rr = 150
+        saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
         load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(rr)
         # load_path  = 'checkpoint/model_final_{}'.format(params['dataset'])
         # Load the checkpoint file
-        state_dict = torch.load(load_path)
+        state_dict = torch.load(load_path, map_location=torch.device('cpu') )
         # Load the trained generator weights.
         netG.load_state_dict(state_dict['netG'])
         # print(netG)
@@ -224,31 +235,31 @@ def run_test(params,m_dir):
             use_log=False
             # print(dir_name)
 
-            # # Plot Input Radiance
-            # fname = dir_name+"/rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            # plot_cot2(cot=input_data_list[aa][:,:,0],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
+            # Plot Input Radiance
+            fname = dir_name+"/rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            plot_cot2(cot=input_data_list[aa][:,:,0],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
 
-            # fname = dir_name+"/op_rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            # plot_cot2(cot=profile[0,:,:],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
+            fname = dir_name+"/op_rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            plot_cot2(cot=profile[0,:,:],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
 
-            # fname = dir_name+"/op_pred_rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            # plot_cot2(cot=pred[0,:,:],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
+            fname = dir_name+"/op_pred_rad066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            plot_cot2(cot=pred[0,:,:],title="Radiance at 0.66um",fname=fname,use_log=use_log,limit=limit1)
 
-            # fname = dir_name+"/abs_error_066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            # plot_cot2(cot=(profile[0,:,:]-pred[0,:,:]),title="Absolute Error 0.66 um",fname=fname,use_log=use_log,limit=limit2)    
+            fname = dir_name+"/abs_error_066_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            plot_cot2(cot=(profile[0,:,:]-pred[0,:,:]),title="Absolute Error 0.66 um",fname=fname,use_log=use_log,limit=limit2)    
 
-            # # Plot Input Radiance
-            # fname = dir_name+"/rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            # plot_cot2(cot=input_data_list[aa][:,:,1],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
+            # Plot Input Radiance
+            fname = dir_name+"/rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            plot_cot2(cot=input_data_list[aa][:,:,1],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
 
-            # fname = dir_name+"/op_rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            # plot_cot2(cot=profile[1,:,:],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
+            fname = dir_name+"/op_rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            plot_cot2(cot=profile[1,:,:],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
 
-            # fname = dir_name+"/op_pred_rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            # plot_cot2(cot=pred[1,:,:],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
+            fname = dir_name+"/op_pred_rad213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            plot_cot2(cot=pred[1,:,:],title="Radiance at 2.13um",fname=fname,use_log=use_log,limit=limit1)
 
-            # fname = dir_name+"/abs_error_213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
-            # plot_cot2(cot=np.abs(profile[1,:,:]-pred[1,:,:]),title="Absolute Error 2.13 um",fname=fname,use_log=use_log,limit=limit2)          
+            fname = dir_name+"/abs_error_213_profile_%03d_fold_%01d_SZA_VZA_%s.png"%(p_num,fold,str(sz_vz_list[aa] ))
+            plot_cot2(cot=np.abs(profile[1,:,:]-pred[1,:,:]),title="Absolute Error 2.13 um",fname=fname,use_log=use_log,limit=limit2)          
 
         cv_mse_loss.append(np.mean(total_loss))
         print("Fold MSE Loss: ",np.mean(total_loss), "Std: ", np.std(total_loss))
@@ -275,6 +286,21 @@ if __name__=="__main__":
     # }
     # m_dir = "v17_saved_model"
 
+    # params = {
+    # 'batch_size': 64,# Batch size.
+    # 'num_epochs': 500,# Number of epochs to train for.
+    # 'learning_rate': 2e-4,# Learning rate.
+    # 'beta1': 0.5,
+    # 'beta2': 0.999,
+    # 'save_epoch' : 25,# After how many epochs to save checkpoints and generate test output.
+    # 'dataset'  : 'Cloud18',# Dataset to use. Choose from {MNIST, SVHN, CelebA, FashionMNIST}. CASE MUST MATCH EXACTLY!!!!!
+    # 'vza_list1': [0,0,0,0,0,0],
+    # 'vza_list2': [15,30, 60, -15, -30, -60],
+    # 'sza_list1': [4.0],
+    # 'sza_list2': [4.0]
+    # }
+    # m_dir = "v13_saved_model"
+    
     params = {
     'batch_size': 64,# Batch size.
     'num_epochs': 500,# Number of epochs to train for.
@@ -285,8 +311,9 @@ if __name__=="__main__":
     'dataset'  : 'Cloud18',# Dataset to use. Choose from {MNIST, SVHN, CelebA, FashionMNIST}. CASE MUST MATCH EXACTLY!!!!!
     'vza_list1': [0,0,0,0,0,0],
     'vza_list2': [15,30, 60, -15, -30, -60],
-    'sza_list1': [4.0],
-    'sza_list2': [4.0]
+    'sza_list1': [4.0,4.0,4.0],
+    'sza_list2': [20.0, 40.0, 60.0]
     }
-    m_dir = "v13_saved_model"
+    m_dir = "v18_saved_model"
+    
     run_test(params, m_dir)

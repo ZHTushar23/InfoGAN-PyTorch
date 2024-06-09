@@ -33,26 +33,31 @@ g = np.arange(61,103)
 h = np.concatenate((f,g))
 
 
-train_data = NasaDataset(profilelist=h,root_dir=dataset_dir1,
-                vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
-                        patch_size=64,stride=10)
+# train_data = NasaDataset(profilelist=h,root_dir=dataset_dir1,
+#                 vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
+#                         patch_size=64,stride=10)
 
-loader = DataLoader(train_data, batch_size=params['batch_size'],shuffle=True)
-data_mean, data_std = get_mean_and_std(loader)
+# loader = DataLoader(train_data, batch_size=params['batch_size'],shuffle=True)
+# data_mean, data_std = get_mean_and_std(loader)
 
+# print(data_mean,data_std)
+# transform_func = T.Compose([
+# T.Normalize(mean=data_mean, std=data_std)
+# ])
+
+# del loader
+# del train_data
+data_mean, data_std = torch.tensor([0.1329, 0.1087], dtype=torch.float64), torch.tensor([0.1537, 0.0924], dtype=torch.float64)
 transform_func = T.Compose([
 T.Normalize(mean=data_mean, std=data_std)
 ])
 
-del loader
-del train_data
-
-test_data = NasaDataset(profilelist=np.arange(31,51),root_dir=dataset_dir1,
-                vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
-                        patch_size=64,stride=10,transform=transform_func,add_dis=True)
 # test_data = NasaDataset(profilelist=np.arange(31,51),root_dir=dataset_dir1,
-#                 vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = [60.0],sza_list2 = [4.0],
+#                 vza_list1 = vza_list1,vza_list2 = vza_list2, sza_list1 = sza_list1,sza_list2 = sza_list2,
 #                         patch_size=64,stride=10,transform=transform_func,add_dis=True)
+test_data = NasaDataset(profilelist=np.arange(31,51),root_dir=dataset_dir1,
+                vza_list1 = [0],vza_list2 = [60], sza_list1 = [4.0],sza_list2 = [60.0],
+                        patch_size=64,stride=10,transform=transform_func,add_dis=True)
 
 dataloader = DataLoader(test_data, batch_size=128,shuffle=False)
 
@@ -71,11 +76,18 @@ netG = Generator(13).to(device)
 cv_mse_loss = []
 
 for fold in range (5):
+    rr= 450
     # if fold==3:
     #     continue
     total_mse_loss=[]
     saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
-    load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(500)
+    if fold==2:
+        rr=375
+    elif fold==0:
+        rr = 150
+
+
+    load_path = saved_model_dir+'/model_epoch_%d_{}'.format(params['dataset']) %(rr)
     # load_path  = 'checkpoint/model_final_{}'.format(params['dataset'])
     # Load the checkpoint file
     state_dict = torch.load(load_path)
