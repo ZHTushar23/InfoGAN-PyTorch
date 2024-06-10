@@ -26,13 +26,14 @@ class EarlyStopping:
         self.delta = delta
         self.path = path
         self.trace_func = trace_func
-    def __call__(self, val_loss,**kwargs):
-
+    def __call__(self, val_loss,netD, netG, netQ,
+                        discriminator,optimD, optimG,params):
         score = -val_loss
 
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss,**kwargs)
+            self.save_checkpoint(val_loss,netD, netG, netQ,
+                        discriminator,optimD, optimG,params)
         elif score < self.best_score + self.delta:
             self.counter += 1
             self.trace_func(f'EarlyStopping counter: {self.counter} out of {self.patience}')
@@ -40,10 +41,12 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, **kwargs)
+            self.save_checkpoint(val_loss,netD, netG, netQ,
+                        discriminator,optimD, optimG,params)
             self.counter = 0
 
-    def save_checkpoint(self, val_loss, **kwargs):
+    def save_checkpoint(self, val_loss, netD, netG, netQ,
+                        discriminator,optimD, optimG,params):
         '''Saves model when validation loss decrease.'''
         if self.verbose:
             self.trace_func(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
