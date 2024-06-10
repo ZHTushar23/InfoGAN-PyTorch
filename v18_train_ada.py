@@ -20,6 +20,7 @@ from v18_dataset import NasaDataset
 from visualization import *
 
 
+
 if(params['dataset'] == 'MNIST'):
     from models.mnist_model import Generator, Discriminator, DHead, QHead
 elif(params['dataset'] == 'SVHN'):
