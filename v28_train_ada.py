@@ -136,7 +136,7 @@ for fold in range(5):
     except FileExistsError:
         print("folder already exists")
     # initialize the early_stopping object
-    early_stopping = EarlyStopping(patience=25, verbose=True,path=saved_model_dir)
+    early_stopping = EarlyStopping(patience=100, verbose=True,path=saved_model_dir)
 
 
     # Initialise the network.
