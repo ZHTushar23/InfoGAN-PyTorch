@@ -77,17 +77,36 @@ if __name__=="__main__":
     f = np.arange(1,31)
     g = np.arange(61,103)
     h = np.concatenate((f,g))
+    # profile_dict = {
+    #     'train':h,
+    #     'val': np.arange(51,61),
+    #     'test': np.arange(31,51)
+    # }
+
+    # # specify angles for input output
+    # SZA1 = [4.0,4.0,4.0]
+    # SZA2 = [20.0,40.0,60.0]
+    # VZA1 = [0,0,0,0,0,0]
+    # VZA2 = [-15,15,30,-30,60,-60]
+
+    # anlge_dict = { 'SZA1':SZA1,
+    #                 'VZA1':VZA1,
+    #                 'SZA2':SZA2,
+    #                 'VZA2':VZA2}
+    # mode='rad2rad2'
+    # output_file_dir= "data_split/nadir_to_all"
+
+    # create_csv_for_data(profile_dict=profile_dict,mode=mode,anlge_dict=anlge_dict,output_file_dir=output_file_dir)
+
     profile_dict = {
-        'train':h,
-        'val': np.arange(51,61),
-        'test': np.arange(31,51)
+        'test_sza_20_vza_15': np.arange(31,51)
     }
 
     # specify angles for input output
-    SZA1 = [4.0,4.0,4.0]
-    SZA2 = [20.0,40.0,60.0]
-    VZA1 = [0,0,0,0,0,0]
-    VZA2 = [-15,15,30,-30,60,-60]
+    SZA1 = [4.0]
+    SZA2 = [20.0]
+    VZA1 = [0]
+    VZA2 = [15]
 
     anlge_dict = { 'SZA1':SZA1,
                     'VZA1':VZA1,
