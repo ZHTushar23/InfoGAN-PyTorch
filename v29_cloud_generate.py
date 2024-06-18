@@ -29,13 +29,13 @@ transform_func = T.Compose([
 T.Normalize(mean=data_mean, std=data_std)
 ])
 
-# test_data = NasaDataset(root_dir=root_data_dir,
-#             filelist="data_split/nadir_to_all/test.csv",
-#             mode="infoGAN",transform=transform_func)
-# SZA only
 test_data = NasaDataset(root_dir=root_data_dir,
-            filelist="data_split/nadir_to_all/test_sza_20_vza_15.csv",
+            filelist="data_split/nadir_to_all/test.csv",
             mode="infoGAN",transform=transform_func)
+# SZA only
+# test_data = NasaDataset(root_dir=root_data_dir,
+#             filelist="data_split/nadir_to_all/test_sza_20_vza_15.csv",
+#             mode="infoGAN",transform=transform_func)
 
 dataloader = DataLoader(test_data, batch_size=128,shuffle=False)
 
@@ -50,9 +50,9 @@ netG = Generator(3).to(device)
 
 cv_mse_loss = []
 
-for fold in range (5):
+for fold in range (2):
     total_mse_loss=[]
-    saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
+    saved_model_dir = saved_model_root_dir+"/nfold_%01d"%(fold)
     load_path = saved_model_dir+'/model_final_{}'.format(params['dataset'])
 
     # Load the checkpoint file

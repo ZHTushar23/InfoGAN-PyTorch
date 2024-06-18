@@ -129,14 +129,14 @@ elif(params['dataset'] == 'Cloud18'):
     params['num_con_c'] = 0
 
 
-for fold in range(5):
+for fold in range(2):
     saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
     try:
         os.makedirs(saved_model_dir)
     except FileExistsError:
         print("folder already exists")
     # initialize the early_stopping object
-    early_stopping = EarlyStopping(patience=100, verbose=True,path=saved_model_dir)
+    early_stopping = EarlyStopping(patience=130, verbose=True,path=saved_model_dir)
 
 
     # Initialise the network.
@@ -342,5 +342,5 @@ for fold in range(5):
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
-    plt.savefig("Loss Curve {}".format(params['dataset']))
+    plt.savefig(saved_model_dir+"/Loss Curve {}".format(params['dataset']))
 
