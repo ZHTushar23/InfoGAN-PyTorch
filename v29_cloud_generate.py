@@ -52,7 +52,7 @@ cv_mse_loss = []
 
 for fold in range (2):
     total_mse_loss=[]
-    saved_model_dir = saved_model_root_dir+"/nfold_%01d"%(fold)
+    saved_model_dir = saved_model_root_dir+"/mfold_%01d"%(fold)
     load_path = saved_model_dir+'/model_final_{}'.format(params['dataset'])
 
     # Load the checkpoint file

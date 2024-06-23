@@ -80,7 +80,7 @@ netG = Generator(13).to(device)
 
 cv_mse_loss = []
 
-for fold in range (5):
+for fold in range (2):
     total_mse_loss=[]
     saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
     load_path = saved_model_dir+'/model_final_{}'.format(params['dataset'])
