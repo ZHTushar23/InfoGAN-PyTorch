@@ -105,7 +105,7 @@ netD = DHead().to(device)
 cv_mse_loss = []
 sz_ac , vz_ac      = [],[]
 
-for fold in range (4,5):
+for fold in range (2):
     total_mse_loss=[]
     saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
     load_path = saved_model_dir+'/model_final_{}'.format(params['dataset'])
