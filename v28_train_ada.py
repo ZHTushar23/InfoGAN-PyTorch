@@ -130,13 +130,13 @@ elif(params['dataset'] == 'Cloud18'):
 
 
 for fold in range(2):
-    saved_model_dir = saved_model_root_dir+"/fold_%01d"%(fold)
+    saved_model_dir = saved_model_root_dir+"/tfold_%01d"%(fold)
     try:
         os.makedirs(saved_model_dir)
     except FileExistsError:
         print("folder already exists")
     # initialize the early_stopping object
-    early_stopping = EarlyStopping(patience=130, verbose=True,path=saved_model_dir)
+    early_stopping = EarlyStopping(patience=200, verbose=True,path=saved_model_dir)
 
 
     # Initialise the network.
@@ -253,7 +253,7 @@ for fold in range(2):
             #     con_loss = criterionQ_con(noise[:, params['num_z']+ params['num_dis_c']*params['dis_c_dim'] : ].view(-1, params['num_con_c']), q_mu, q_var)*0.1
 
             # Net loss for generator.
-            G_loss = gen_loss + dis_loss + con_loss
+            G_loss = gen_loss + 100*dis_loss + con_loss
             # Calculate gradients.
             G_loss.backward()
             # Update parameters.
