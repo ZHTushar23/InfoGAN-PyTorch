@@ -130,7 +130,7 @@ elif(params['dataset'] == 'Cloud18'):
 
 
 for fold in range(2):
-    saved_model_dir = saved_model_root_dir+"/tfold_%01d"%(fold)
+    saved_model_dir = saved_model_root_dir+"/t2fold_%01d"%(fold)
     try:
         os.makedirs(saved_model_dir)
     except FileExistsError:
@@ -253,7 +253,7 @@ for fold in range(2):
             #     con_loss = criterionQ_con(noise[:, params['num_z']+ params['num_dis_c']*params['dis_c_dim'] : ].view(-1, params['num_con_c']), q_mu, q_var)*0.1
 
             # Net loss for generator.
-            G_loss = gen_loss + 10*dis_loss + con_loss
+            G_loss = gen_loss + 100*dis_loss + con_loss
             # Calculate gradients.
             G_loss.backward()
             # Update parameters.
