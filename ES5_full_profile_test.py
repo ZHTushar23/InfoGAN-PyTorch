@@ -21,8 +21,8 @@ sza_full_list = [60.0,40.0,20.0,4.0]
 vza_full_list = [60,30,15,0,-15,-30,-60]
 
 
-def get_profile_pred(model,X_test,Y_test,style_code,transform2,patch_size=64,stride=10):
-    style_code = style_code.to(dtype=torch.float32)
+def get_profile_pred(model,X_test,Y_test,style_code,transform2,device,patch_size=64,stride=10):
+    style_code = style_code.to(device,dtype=torch.float32)
     style_code = torch.unsqueeze(style_code,0)
     # stride = 2
     img_width = X_test.shape[1]
@@ -60,7 +60,7 @@ def get_profile_pred(model,X_test,Y_test,style_code,transform2,patch_size=64,str
             #     label = Y_test[0:2,row_start:row_end,col_start:col_end]
 
 
-            patch   = patch.to(dtype=torch.float32)            
+            patch   = patch.to(device,dtype=torch.float32)            
             patch = torch.unsqueeze(patch,0)
 
             with torch.no_grad():
@@ -174,14 +174,14 @@ def run_test(out):
                         # reflectance at 2.13 um
                         r_data_ip[:,:,1]   = temp[s,v,1,:,:]
 
-                        profile, pred, scores = get_profile_pred(netG,r_data_ip,cot,style_code,transform_func)
+                        profile, pred, scores = get_profile_pred(netG,r_data_ip,cot,style_code,transform_func,device)
                         fold_loss.append(scores['mse'])
 
             print("Fold: ",fold, " Mean test Loss: ", np.average(fold_loss), " Std: ", np.std(fold_loss))
             writer.writerow([saved_model_name,np.average(fold_loss),np.std(fold_loss)])
             total_loss.append(np.average(fold_loss))
         print(" Mean test Loss: ", np.average(total_loss), " Std: ", np.std(total_loss))
-        writer.writerow([saved_model_name,np.average(fold_loss), np.std(total_loss)])
+        writer.writerow([saved_model_name,np.average(total_loss), np.std(total_loss)])
     print("Done!")
 
     #     else:
@@ -194,11 +194,14 @@ def run_test(out):
 
 if __name__=="__main__":
 
-    sza_list1  = [60.0,40.0,20.0,4.0]
-    vza_list1  = [60,30,15,0,-15,-30,-60]
+    for sza_list1 in sza_full_list:
+        for vza_list1 in vza_full_list:
+            # sza_list1  = [40.0]
+            # vza_list1  = [0]
 
-    out = {
-            "sza1":sza_list1, "vza1":vza_list1}
-    run_test(out)
+            out = {
+                    "sza1":[sza_list1], "vza1":[vza_list1]}
+            print("SZA: ", sza_list1, " VZA: ",vza_list1)
+            run_test(out)
     # for p_b in range(0, 36, 2):
     #     print(p_b)
