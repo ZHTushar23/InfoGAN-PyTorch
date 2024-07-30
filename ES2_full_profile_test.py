@@ -103,7 +103,7 @@ def run_test(out):
 
     root_data_dir ="/home/ztushar1/psanjay_user/multi-view-cot-retrieval/LES_MultiView_100m_64/"
     data_split_dir = "/home/ztushar1/psanjay_user/multi-view-cot-retrieval/"
-    data_split_sub_dir = "data_split/cot_sza_%02d_vza_%02d"%(sza_list1[0],vza_list1[0])
+    data_split_sub_dir = "data_split/cot_sza_all_vza_0"
     from ES1_dataset import NasaDataset, get_mean_and_std
     from torch.utils.data import DataLoader
     train_data = NasaDataset(root_dir=root_data_dir,
@@ -125,7 +125,7 @@ def run_test(out):
     netG = Generator(in_ch=2,out_ch=1).to(device)
 
     # load model
-    saved_model_dir = 'es1_saved_model'
+    saved_model_dir = 'es2_saved_model'
     dir_name = saved_model_dir+"/full_profile_"
     try:
         os.makedirs(dir_name)
@@ -145,7 +145,7 @@ def run_test(out):
             # if fold!=out["f"]:
             #     continue
 
-            saved_model_name = "fold_%01d_sza_%02d_vza_%02d"%(fold,sza_list1[0],vza_list1[0])+'/model_final_ES1'
+            saved_model_name = "fold_%01d"%(fold)+'/model_final_ES2'
             saved_model_path = os.path.join(saved_model_dir,saved_model_name)
             # Load the checkpoint file
             state_dict = torch.load(saved_model_path,map_location=torch.device('cpu'))
@@ -207,7 +207,7 @@ def run_test(out):
 if __name__=="__main__":
 
 
-    sza_list1  = [20.0]
+    sza_list1  = [60.0,40.0,20.0,4.0]
     vza_list1  = [0]
 
     out = {
