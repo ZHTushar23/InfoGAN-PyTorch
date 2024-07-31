@@ -125,7 +125,7 @@ def run_test(out):
     netG = Generator(in_ch=2,out_ch=1).to(device)
 
     # load model
-    saved_model_dir = 'es1_saved_model'
+    saved_model_dir = 'ES3_saved_model'
     dir_name = saved_model_dir+"/full_profile_"
     try:
         os.makedirs(dir_name)
@@ -207,8 +207,8 @@ def run_test(out):
 if __name__=="__main__":
 
 
-    sza_list1  = [60.0]
-    vza_list1  = [0]
+    sza_list1  = [20.0]
+    vza_list1  = [30]
 
     out = {
             "sza1":sza_list1, "vza1":vza_list1}

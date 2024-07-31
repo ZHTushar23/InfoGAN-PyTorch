@@ -13,7 +13,7 @@ import os
 import h5py
 import csv
 # from ES1_config import params
-from models.es5_model import Generator
+from models.cloud_model18 import Generator
 import numpy as np
 # dataset dir
 dataset_dir1 = "/nfs/rs/psanjay/users/ztushar1/LES_vers1_multiangle_results"
@@ -22,8 +22,7 @@ vza_full_list = [60,30,15,0,-15,-30,-60]
 
 
 def get_profile_pred(model,X_test,Y_test,style_code,transform2,device,patch_size=64,stride=10):
-    style_code = style_code.to(device,dtype=torch.float32)
-    style_code = torch.unsqueeze(style_code,0)
+    style_code = TF.to_tensor(style_code)
     # stride = 2
     img_width = X_test.shape[1]
     img_height = X_test.shape[0]
@@ -51,6 +50,7 @@ def get_profile_pred(model,X_test,Y_test,style_code,transform2,device,patch_size
             col_start =  min(col*stride,img_width-patch_width)
             col_end = col_start+patch_width
             patch = X_test[:,row_start:row_end,col_start:col_end]
+            patch = torch.cat((patch,style_code),dim=0)
 
             # if model_name=="okamura":
             #     label = Y_test[0:2,row_start+2:row_end-2,col_start+2:col_end-2]
@@ -64,7 +64,7 @@ def get_profile_pred(model,X_test,Y_test,style_code,transform2,device,patch_size
             patch = torch.unsqueeze(patch,0)
 
             with torch.no_grad():
-                patch_pred = model(patch,style_code).detach().cpu().numpy()
+                patch_pred = model(patch).detach().cpu().numpy()
             # print("pred patch shape: ",patch_pred.shape)
             # print("pred patch min max: ",np.min(patch_pred[1,:,:]),np.max(patch_pred[1,:,:]))
             # map[row_start:row_end,col_start:col_end] =map[row_start:row_end,col_start:col_end] +np.ones((10,10))
@@ -103,7 +103,7 @@ def run_test(out):
 
     root_data_dir ="/home/ztushar1/psanjay_user/multi-view-cot-retrieval/LES_MultiView_100m_64/"
     data_split_dir = "/home/ztushar1/psanjay_user/multi-view-cot-retrieval/"
-    data_split_sub_dir = "data_split/cot_sza_%02d_vza_%02d"%(sza_list1[0],vza_list1[0])
+    data_split_sub_dir = "data_split/cot_sza_all_vza_0"
     from ES1_dataset import NasaDataset, get_mean_and_std
     from torch.utils.data import DataLoader
     train_data = NasaDataset(root_dir=root_data_dir,
@@ -122,10 +122,10 @@ def run_test(out):
     ])
 
     # Create the generator network.
-    netG = Generator(in_ch=2,out_ch=1).to(device)
+    netG = Generator(in_channels=13,out_channels=1).to(device)
 
     # load model
-    saved_model_dir = 'es1_saved_model'
+    saved_model_dir = 'dc_es2_saved_model'
     dir_name = saved_model_dir+"/full_profile_"
     try:
         os.makedirs(dir_name)
@@ -145,7 +145,7 @@ def run_test(out):
             # if fold!=out["f"]:
             #     continue
 
-            saved_model_name = "fold_%01d_sza_%02d_vza_%02d"%(fold,sza_list1[0],vza_list1[0])+'/model_final_ES1'
+            saved_model_name = "fold_%01d"%(fold)+'/model_final_Cloud18'
             saved_model_path = os.path.join(saved_model_dir,saved_model_name)
             # Load the checkpoint file
             state_dict = torch.load(saved_model_path,map_location=torch.device('cpu'))
@@ -171,22 +171,17 @@ def run_test(out):
 
                         r_data_ip   = np.empty((144,144,2), dtype=float) 
                         cot         = np.log(temp2 +1)
-
-                        sza_bits = format(s, '02b')
-                        vza_bits = format(v, '03b')
-                        # Concatenate the bits to form the 5-bit code
-                        dis_c = sza_bits + vza_bits
-                        # Convert dis_c to a list of integers (0 or 1)
-                        dis_c_list = [int(bit) for bit in dis_c]
-                        # Convert the list to a torch tensor
-                        style_code = torch.tensor(dis_c_list, dtype=torch.float32)                         
+                        dis_c       = np.zeros((64,64,11), dtype=float) # 4+7=11 sza+vza
+                        # assign 1 to sza and vza channels
+                        dis_c[:,:,s] = 1
+                        dis_c[:,:,v+4] = 1                     
 
                         # reflectance at 0.66 um
                         r_data_ip[:,:,0]   = temp[s,v,0,:,:]
                         # reflectance at 2.13 um
                         r_data_ip[:,:,1]   = temp[s,v,1,:,:]
 
-                        profile, pred, scores = get_profile_pred(netG,r_data_ip,cot,style_code,transform_func,device)
+                        profile, pred, scores = get_profile_pred(netG,r_data_ip,cot,dis_c,transform_func,device)
                         fold_loss.append(scores['mse'])
 
             print("Fold: ",fold, " Mean test Loss: ", np.average(fold_loss), " Std: ", np.std(fold_loss))
@@ -207,7 +202,7 @@ def run_test(out):
 if __name__=="__main__":
 
 
-    sza_list1  = [60.0]
+    sza_list1  = [60.0,40.0,20.0,4.0]
     vza_list1  = [0]
 
     out = {
