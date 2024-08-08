@@ -21,7 +21,9 @@ sza_full_list = [60.0,40.0,20.0,4.0]
 vza_full_list = [60,30,15,0,-15,-30,-60]
 
 
-def get_profile_pred(model,X_test,Y_test,style_code,transform2,device,patch_size=64,stride=10):
+def get_profile_pred(model,X_test,Y_test,style_code,transform2,device,p_model,patch_size=64,stride=10):
+    model = model.to(device)
+    p_model = p_model.to(device)
     style_code = style_code.to(device,dtype=torch.float32)
     style_code = torch.unsqueeze(style_code,0)
     # stride = 2
@@ -59,12 +61,13 @@ def get_profile_pred(model,X_test,Y_test,style_code,transform2,device,patch_size
             # else:
             #     label = Y_test[0:2,row_start:row_end,col_start:col_end]
 
-
+            
             patch   = patch.to(device,dtype=torch.float32)            
             patch = torch.unsqueeze(patch,0)
 
             with torch.no_grad():
-                patch_pred = model(patch,style_code).detach().cpu().numpy()
+                stage1_output = p_model(patch,style_code)
+                patch_pred = model(stage1_output,style_code).detach().cpu().numpy()
             # print("pred patch shape: ",patch_pred.shape)
             # print("pred patch min max: ",np.min(patch_pred[1,:,:]),np.max(patch_pred[1,:,:]))
             # map[row_start:row_end,col_start:col_end] =map[row_start:row_end,col_start:col_end] +np.ones((10,10))
@@ -91,7 +94,14 @@ def get_profile_pred(model,X_test,Y_test,style_code,transform2,device,patch_size
 
 # define a function that takes model's name and do the rests
 def run_test(out):
-
+    # load 1st stage model
+    p_model = Generator(in_ch=2,out_ch=2)
+    stage1_model_path = "/home/ztushar1/psanjay_user/InfoGAN-PyTorch/ES4_saved_model/fold_1_multi/model_final_ES1"
+    # Load the checkpoint file
+    state_dict = torch.load(stage1_model_path,map_location=torch.device('cpu'))
+    # Load the trained generator weights.
+    p_model.load_state_dict(state_dict['netG'])
+    del state_dict
     # Check if the GPU is available
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device("cpu")
     print(f'Main Selected device: {device}')
@@ -103,7 +113,7 @@ def run_test(out):
 
     root_data_dir ="/home/ztushar1/psanjay_user/multi-view-cot-retrieval/LES_MultiView_100m_64/"
     data_split_dir = "/home/ztushar1/psanjay_user/multi-view-cot-retrieval/"
-    data_split_sub_dir = "data_split/cot_sza_%02d_vza_%02d"%(sza_list1[0],vza_list1[0])
+    data_split_sub_dir = "data_split/cot_sza_20_vza_all"
     from ES1_dataset import NasaDataset, get_mean_and_std
     from torch.utils.data import DataLoader
     train_data = NasaDataset(root_dir=root_data_dir,
@@ -125,7 +135,7 @@ def run_test(out):
     netG = Generator(in_ch=2,out_ch=1).to(device)
 
     # load model
-    saved_model_dir = 'ES3_saved_model'
+    saved_model_dir = 'ES4_saved_model_multi2'
     dir_name = saved_model_dir+"/full_profile_"
     try:
         os.makedirs(dir_name)
@@ -145,7 +155,7 @@ def run_test(out):
             # if fold!=out["f"]:
             #     continue
 
-            saved_model_name = "fold_%01d_sza_%02d_vza_%02d"%(fold,sza_list1[0],vza_list1[0])+'/model_final_ES1'
+            saved_model_name = "fold_%01d_multi2"%(fold)+'/model_final_ES1'
             saved_model_path = os.path.join(saved_model_dir,saved_model_name)
             # Load the checkpoint file
             state_dict = torch.load(saved_model_path,map_location=torch.device('cpu'))
@@ -186,7 +196,8 @@ def run_test(out):
                         # reflectance at 2.13 um
                         r_data_ip[:,:,1]   = temp[s,v,1,:,:]
 
-                        profile, pred, scores = get_profile_pred(netG,r_data_ip,cot,style_code,transform_func,device)
+                        profile, pred, scores = get_profile_pred(netG,r_data_ip,cot,
+                                            style_code,transform_func,device,p_model)
                         fold_loss.append(scores['mse'])
 
             print("Fold: ",fold, " Mean test Loss: ", np.average(fold_loss), " Std: ", np.std(fold_loss))
@@ -208,7 +219,7 @@ if __name__=="__main__":
 
 
     sza_list1  = [20.0]
-    vza_list1  = [-60]
+    vza_list1  = [60,30,15,0,-15,-30,-60]
 
     out = {
             "sza1":sza_list1, "vza1":vza_list1}

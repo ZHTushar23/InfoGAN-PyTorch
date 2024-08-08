@@ -168,8 +168,8 @@ if __name__=="__main__":
     transform_func = T.Compose([T.Normalize(mean=data_mean, std=data_std)])
         
     train_data = NasaDataset(root_dir=root_data_dir,
-    filelist=data_split_dir+"data_split/cot_all_except_sza_4_vza_0/train.csv",
-    mode="infoGAN_cot", transform=transform_func)
+    filelist=data_split_dir+"data_split/cot_sza_04_vza_00/train.csv",
+    mode="infoGAN_cot", transform=None)
     print(len(train_data))
     loader = DataLoader(train_data, batch_size=2,shuffle=False)
     data_mean, data_std = get_mean_and_std(loader)
