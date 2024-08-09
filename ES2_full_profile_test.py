@@ -189,6 +189,8 @@ def run_test(out):
                         profile, pred, scores = get_profile_pred(netG,r_data_ip,cot,style_code,transform_func,device)
                         fold_loss.append(scores['mse'])
 
+                        print("Profile: ", p_num, " MSE: ", scores['mse'])
+
             print("Fold: ",fold, " Mean test Loss: ", np.average(fold_loss), " Std: ", np.std(fold_loss))
             writer.writerow([saved_model_name,np.average(fold_loss),np.std(fold_loss)])
             total_loss.append(np.average(fold_loss))
@@ -207,7 +209,7 @@ def run_test(out):
 if __name__=="__main__":
 
 
-    sza_list1  = [60.0,40.0,20.0,4.0]
+    sza_list1  = [4.0]
     vza_list1  = [0]
 
     out = {

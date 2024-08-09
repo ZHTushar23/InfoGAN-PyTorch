@@ -208,7 +208,7 @@ if __name__=="__main__":
 
 
     sza_list1  = [20.0]
-    vza_list1  = [60,30,15,0,-15,-30,-60]
+    vza_list1  = [0]
 
     out = {
             "sza1":sza_list1, "vza1":vza_list1}
